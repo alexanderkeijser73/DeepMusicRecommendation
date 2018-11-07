@@ -30,7 +30,7 @@ def learn_dictionary(audio_files, k=4000):
     """
     features = np.empty((0, 39), dtype=np.float)
     for y in audio_files:
-        mfccs = get_mfcc(y, sr=SR)
+        mfccs = get_mfcc(y, sr=22050)
         features = np.append(features, mfccs, axis=0)
     print("Training k-means clustering...")
     means = KMeans(n_clusters=k).fit(features)
@@ -46,23 +46,27 @@ def vector_quantize(song, kmeans):
     mfcc = get_mfcc(song, sr=22050)
     # Find cluster assignment counts
     assignments = kmeans.predict(mfcc)
-    _, counts = np.unique(assignments, return_counts=True)
+
+    counts = np.zeros(kmeans.cluster_centers_.shape[0])
+    for i in assignments:
+        counts[i] += 1
+
     return counts
 
-def generate_data_matrix(songs):
+def generate_data_matrix(songs, k=200):
     """
     Generates data matrix for array of song time series and applies PCA
     :param songs: array with rows containing songs as audio time series
     :return:      data matrix after applying PCA to retain 95 percent variance
     """
     # Train k-means clustering
-    kmeans = learn_dictionary(songs k=4000)
+    kmeans = learn_dictionary(songs, k=k)
 
     # Calculate BOW features for songs
-    data_matrix = np.empty((0, 4000), dtype=np.float)
-    for y in audio_files:
-        mfccs = get_mfcc(y, sr=SR)
-        data_matrix = np.append(features, mfccs, axis=0)
+    data_matrix = np.empty((0, k), dtype=np.float)
+    for y in songs:
+        counts = vector_quantize(y, kmeans)
+        data_matrix = np.append(data_matrix, np.expand_dims(counts, axis=0), axis=0)
 
     # Apply PCA to data matrix
     pca = PCA(n_components=0.95, svd_solver='full')
@@ -86,3 +90,4 @@ if __name__ == '__main__':
     print(get_mfcc(y, sr).shape)
     kmeans = learn_dictionary([y], k=100)
     print(vector_quantize(y, kmeans))
+    print(generate_data_matrix([y, y+0.1]))
