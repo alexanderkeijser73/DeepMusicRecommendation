@@ -48,7 +48,7 @@ import hdf5_utils
 import hdf5_getters as GETTERS
 
 # try to get 7digital API key
-DIGITAL7_API_KEY = "BQBCemMMflDmmI8_Z5XrpAoukXlsso5qZjVR8jvg_hcjBr47Pj2Eqo0oX-pi7ShzfEUsdLWuCLe8xpynIry4sQf3bmN1IbhyKPgiZFqaX82zFtmWC5T657wJTmsALBUZnL0C0ZVxVvk6YDs1I99dv_-94H0R-rhN-Qd8mJdJJIBHE61nuKAS-ZU3O8ZHvV_0g-NY8vRki-1A1SkX_sr_P60zZlvf5FeJtJTQYbGGah0b3AoSX_tNEN69s1SjylVoTHl_PH_y0cM1uSAaYNGJyS5l6Gc"
+DIGITAL7_API_KEY = "BQCi30VKhqCcf79E8WcyPkao314MHUECbfeYRSm9L8PpS1RdA-8C-rZUSmHlrDQ542SrbM49eOwnuiWnEWGUaKpytO7Fm5envFh2_0kIc4clRG8cEgu56jQw4xxEexI_jc4zoE_b2qQIHQrwoqPRERW8tOAGk4LgafdkbAy6cVXf2Dce1t6k_XVUTGP5jfjxAJvV1_GF3OlNVuaYUQRBvo49u5ziigYTjLpbe2ITe7asvnn1QGa06syCBx5M4oVgPV1j67CxvIEbbV6nUHWxv2j3HSA"
 
 
 def url_call(url):
@@ -127,9 +127,11 @@ def get_trackid_from_text_search(title,artistname=''):
     if len(results) > 0:
         first_result = results[0]
         preview_url = first_result['preview_url']
+        name = first_result['name']
+        result = (name, preview_url)
     else:
-        preview_url = None
-    return preview_url
+        result = None
+    return result
 
     
 def get_tracks_from_artistid(artistid):
@@ -266,10 +268,12 @@ if __name__ == '__main__':
 
     print('Searching for track: ', artist_name, ' - ', track_name)
     #search by artist name + track title
-    res = get_trackid_from_text_search(track_name,artistname=artist_name)
-    print(res)
     if res is None:
         print( 'Did not find track using artist name and track title')
+    else:
+        res = get_trackid_from_text_search(track_name, artistname=artist_name)
+        name, preview_url = res
+        print(name)
     #     sys.exit(0)
     # closest_track,trackid = res
     # if closest_track != track_name:
