@@ -123,31 +123,13 @@ def get_trackid_from_text_search(title,artistname=''):
     with open('./string.txt', 'w+') as f:
         f.write(string)
     json_obj = json.loads(string)
-    print(json_obj)
-    # tracks = json_obj['tracks']
-    # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(tracks)
-
-    # xmldoc = minidom.parse(stream).documentElement
-    # stream.close()
-    # print(xmldoc)
-    # response = urllib.request.urlopen(req)
-    #
-    # the_page = response.read()
-    # print(the_page[0])
-    # # print(the_page)
-    # # print(str(req))
-    # xmldoc = url_call(req)
-    # status = xmldoc.getAttribute('status')
-    # if status != 'ok':
-    #     return None
-    # resultelem = xmldoc.getElementsByTagName('searchResult')
-    # if len(resultelem) == 0:
-    #     return None
-    # track = resultelem[0].getElementsByTagName('track')[0]
-    # tracktitle = track.getElementsByTagName('title')[0].firstChild.data
-    # trackid = int(track.getAttribute('id'))
-    return (tracktitle,trackid)
+    results = json_obj['tracks']['items']
+    if len(results) > 0:
+        first_result = results[0]
+        preview_url = first_result['preview_url']
+    else:
+        preview_url = None
+    return preview_url
 
     
 def get_tracks_from_artistid(artistid):
@@ -248,45 +230,55 @@ def die_with_usage():
 
 if __name__ == '__main__':
 
+    print(sys.argv)
+
     # help menu
     if len(sys.argv) < 2:
         die_with_usage()
-
+    # flags
+    while True:
+        if sys.argv[1] == '-7digitalkey':
+            DIGITAL7_API_KEY = sys.argv[2]
+            sys.argv.pop(1)
+        else:
+            break
+        sys.argv.pop(1)
 
     # params
     h5path = sys.argv[1]
 
     # sanity checks
-    if not os.path.isfile(h5path):
-        print(( 'invalid path (not a file):',h5path))
+    if DIGITAL7_API_KEY is None:
+        print ('You need to set a 7digital API key!')
+        print ('Get one at: http://developer.7digital.net/')
+        print ('Pass it as a flag: -7digitalkey KEY')
+        print ('or set it under environment variable: DIGITAL7_API_KEY')
         sys.exit(0)
-
+    if not os.path.isfile(h5path):
+        print ('invalid path (not a file):',h5path)
+        sys.exit(0)
 
     # open h5 song, get all we know about the song
     h5 = hdf5_utils.open_h5_file_read(h5path)
-    track_7digitalid = GETTERS.get_track_7digitalid(h5)
-    release_7digitalid = GETTERS.get_release_7digitalid(h5)
-    artist_7digitalid = GETTERS.get_artist_7digitalid(h5)
     artist_name = GETTERS.get_artist_name(h5).decode('utf-8')
-    release_name = GETTERS.get_release(h5)
     track_name = GETTERS.get_title(h5).decode('utf-8')
     h5.close()
 
-
-    print('search track: ', track_name, artist_name)
+    print('Searching for track: ', artist_name, ' - ', track_name)
     #search by artist name + track title
     res = get_trackid_from_text_search(track_name,artistname=artist_name)
+    print(res)
     if res is None:
-        print( 'something went wrong when doing text search with artist and track name, no more ideas')
-        sys.exit(0)
-    closest_track,trackid = res
-    if closest_track != track_name:
-        print(( 'we approximate your song title:',track_name,'by:',closest_track))
-    preview = get_preview_from_trackid(trackid)
-    if preview == '':
-        print( 'something went wrong when looking by track id after text searching by artist and track name')
-    else:
-        print( preview)
-        sys.exit(0)
+        print( 'Did not find track using artist name and track title')
+    #     sys.exit(0)
+    # closest_track,trackid = res
+    # if closest_track != track_name:
+    #     print(( 'we approximate your song title:',track_name,'by:',closest_track))
+    # preview = get_preview_from_trackid(trackid)
+    # if preview == '':
+    #     print( 'something went wrong when looking by track id after text searching by artist and track name')
+    # else:
+    #     print( preview)
+    #     sys.exit(0)
 
 
