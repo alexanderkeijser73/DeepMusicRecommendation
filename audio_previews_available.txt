@@ -2,3 +2,7 @@ Naive search:       Total tracks: 9989 Unfound tracks: 3077 Unavailable tracks 1
 After regex:        Total tracks: 9989 Unfound tracks: 2216 Unavailable tracks 1504
 
 Regex:  remove specific information like (2010 Remaster) or [Album version]
+
+After regex in artist name:
+
+Total tracks: 9989 Unfound tracks: 2156 Unavailable tracks 1513
