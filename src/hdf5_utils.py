@@ -381,7 +381,7 @@ def create_song_file(h5filename,title='H5 Song File',force=False,complevel=1):
         if os.path.exists(h5filename):
             raise ValueError('file exists, can not create HDF5 song file')
     # create the H5 file
-    h5 = tables.openFile(h5filename, mode='w', title='H5 Song File')
+    h5 = tables.open_file(h5filename, mode='w', title='H5 Song File')
     # set filter level
     h5.filters = tables.Filters(complevel=complevel,complib='zlib')
     # setup the groups and tables
@@ -438,7 +438,7 @@ def create_aggregate_file(h5filename,title='H5 Aggregate File',force=False,expec
     if summaryfile:
         title = 'H5 Summary File'
     # create the H5 file
-    h5 = tables.openFile(h5filename, mode='w', title='H5 Song File')
+    h5 = tables.open_file(h5filename, mode='w', title='H5 Song File')
     # set filter level
     h5.filters = tables.Filters(complevel=complevel,complib='zlib')
     # setup the groups and tables
@@ -521,13 +521,13 @@ def open_h5_file_read(h5filename):
     """
     Open an existing H5 in read mode.
     """
-    return tables.openFile(h5filename, mode='r')
+    return tables.open_file(h5filename, mode='r')
 
 def open_h5_file_append(h5filename):
     """
     Open an existing H5 in append mode.
     """
-    return tables.openFile(h5filename, mode='a')
+    return tables.open_file(h5filename, mode='a')
 
 
 ################################################ MAIN #####################################

@@ -48,7 +48,7 @@ import hdf5_utils
 import hdf5_getters as GETTERS
 
 # try to get 7digital API key
-DIGITAL7_API_KEY = "BQCdZ9bL3bHx4rvqwrzNF-MqTsKJWKy6slloFw8930c-jB1XA5EKI_Tdnzsq2fTs7BqQ3nzy0Uv64SRzWqr2fbREqbDEHJqItpH4ZvB9IX11F1KmcedWySDi_LXeGwhlk0833HKIBulwgjSLssQtGKbERIa8Ga6ACJY6Lz9vBtY4a7r8ccEhBCV2xpMlEsrtNVFoS-OS1DJRYMcEpDP0g-iq-iaSkkHpTlnrIG7YRz3W1B5Ocql4jjFV-3_bSMxi6r0gFLujiZaBlY_7Y6VOWjB2PV4"
+DIGITAL7_API_KEY = "BQDnvR6SzB64ub9XG4sMq1nHXjMVFjCxImoR34AY3C_y5PA7NioeDZfvLiiN6jhgD5SEbiaay9sx_a6ynqzhg0P0tTzjtCVCbLF8XZdq4uwrLtXu0TpJbBy2HpMnjbEq2EVHAK37S__PT7bVm5lMuonHveETIffl2aunr25IQL0QlcICNf0FhU89-cEYLaonGZOe_cHEs9u1oz8xUkSEKYeoD28ENDcdlvAApqbgZaB1IBga3GxZX477atkmDSDWKC_t8L4x3bTsXLjdiqOabH37v9c"
 
 
 def url_call(url):
@@ -120,8 +120,8 @@ def get_trackid_from_text_search(title,artistname=''):
     req.add_header("Authorization", "Bearer " + DIGITAL7_API_KEY)
     stream = urllib.request.urlopen(req)
     string = stream.read().decode('utf-8')
-    with open('./string.txt', 'w+') as f:
-        f.write(string)
+    # with open('./string.txt', 'w+') as f:
+        # f.write(string)
     json_obj = json.loads(string)
     results = json_obj['tracks']['items']
     if len(results) > 0:
