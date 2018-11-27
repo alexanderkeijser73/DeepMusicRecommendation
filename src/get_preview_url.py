@@ -40,16 +40,16 @@ from xml.dom import minidom
 
 # Million Song Dataset imports, works under Linux
 # otherwise, put the PythonSrc directory in the PYTHONPATH!
-pythonsrc = os.path.abspath('__file__')
-pythonsrc = os.path.join(pythonsrc,'../../../PythonSrc')
-pythonsrc = os.path.abspath( pythonsrc )
-sys.path.append( pythonsrc )
+# pythonsrc = os.path.abspath('__file__')
+# pythonsrc = os.path.join(pythonsrc,'../../../PythonSrc')
+# pythonsrc = os.path.abspath( pythonsrc )
+# sys.path.append( pythonsrc )
 import hdf5_utils
 import hdf5_getters as GETTERS
 
-# try to get 7digital API key
-DIGITAL7_API_KEY = "BQDnvR6SzB64ub9XG4sMq1nHXjMVFjCxImoR34AY3C_y5PA7NioeDZfvLiiN6jhgD5SEbiaay9sx_a6ynqzhg0P0tTzjtCVCbLF8XZdq4uwrLtXu0TpJbBy2HpMnjbEq2EVHAK37S__PT7bVm5lMuonHveETIffl2aunr25IQL0QlcICNf0FhU89-cEYLaonGZOe_cHEs9u1oz8xUkSEKYeoD28ENDcdlvAApqbgZaB1IBga3GxZX477atkmDSDWKC_t8L4x3bTsXLjdiqOabH37v9c"
 
+# try to get 7digital API key
+DIGITAL7_API_KEY = "BQD9ocZm6pT13E-jaJIlHLla5QizebvPaBOynNyEMfiUHpAdsypDbDsynxzQNMNMXtRKsHf1a3MtzPVUZiD1Q51d0SaQmMFaaEDGjhDbyx2f4gDxg9Hgi4p8k7rw2HFrcXQVcUE-d1frD3P_QxcncBsQRl0OulBuFGyoYktsIms4IJpwRtOZ4vg_UausM795S1TJYr3OhtPEGpusFLsa-L-wdcWTHKEgyXnlrK2CnBcvuHnOASLOX3P0M4quyukT-DtXAz5uhpZ9FviCY2SprJZr6AA"
 
 def url_call(url):
     """
@@ -128,7 +128,8 @@ def get_trackid_from_text_search(title,artistname=''):
         first_result = results[0]
         preview_url = first_result['preview_url']
         name = first_result['name']
-        result = (name, preview_url)
+        id = first_result['id']
+        result = (name, preview_url, id)
     else:
         result = None
     return result
@@ -200,16 +201,24 @@ def get_preview_from_trackid(trackid):
 
     We parse it for the URL that we return, or '' if a problem
     """
-    url = 'http://api.7digital.com/1.2/track/preview?redirect=false'
-    url += '&trackid='+str(trackid)
-    url += '&oauth_consumer_key='+DIGITAL7_API_KEY
-    xmldoc = url_call(url)
-    status = xmldoc.getAttribute('status')
-    if status != 'ok':
-        return ''
-    urlelem = xmldoc.getElementsByTagName('url')[0]
-    preview = urlelem.firstChild.nodeValue
-    return preview
+    ''''
+    "GET" "https://api.spotify.com/v1/tracks/7ERvcsBBYzSHqQQqlI9xAN?market=NL" -H "Accept: application/json" 
+    -H "Content-Type: application/json" -H "Authorization: Bearer 
+    BQC4yrww95CO9EtVho7KF-iBGnFmmAjKZ3EOmgmmKJJL_yL2Mb4QRz3tXMsz_sSiwmRAMQUHmQeA1_uhnrAPsCaH3dsQVjVGgf-B1YpE45r7jE
+    SpSC5uqo20hIJ8my__rNSTEicOwgQPEy1rirZkL6u9Xo_4jHIH68vMaS82HChBNm3cs9GplfChARnSySqZMK4H_Qr6e2W-q0AMX2mT2Ts8DeIF7QxDo2wdudd_3X-wKY2in
+    SOZe3lN5FjC_-tDFSPUxeM-Rf21704LmWmXvGpsGUM"
+    '''
+    url = 'https://api.spotify.com/v1/tracks/'
+    url += str(trackid)
+    req = urllib.request.Request(url)  # POST request doesn't not work
+    req.add_header("Accept", "application/json")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Authorization", "Bearer " + DIGITAL7_API_KEY)
+    stream = urllib.request.urlopen(req)
+    string = stream.read().decode('utf-8')
+    json_obj = json.loads(string)
+    preview_url = json_obj['preview_url']
+    return preview_url
 
 
 def die_with_usage():
