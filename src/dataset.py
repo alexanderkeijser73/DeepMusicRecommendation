@@ -1,5 +1,4 @@
 import torch
-import torch.utils as utils
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import os
@@ -7,6 +6,7 @@ from librosa.core import get_duration, load
 from librosa.feature import melspectrogram
 import numpy as np
 import pickle
+import time
 
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectograms for audio samples"""
@@ -29,8 +29,9 @@ class SpectrogramDataset(Dataset):
             song_name = track_to_song[os.path.splitext(file_name)[0]]
             if song_name in wmf_item2i.keys():
                 files[number] = file_name
+                number += 1
 
-                assert get_duration(filename=os.path.join(root_dir, file_name)) == 30
+                # assert get_duration(filename=os.path.join(root_dir, file_name)) == 30, f"found duration: {get_duration(filename=os.path.join(root_dir, file_name))}"
         self.files = files
 
     def __len__(self):
@@ -45,7 +46,7 @@ class SpectrogramDataset(Dataset):
         sample = {'spectrogram': mel_spectrogram, 'latent_factors': latent_factors}
 
         if self.transform:
-            sample - self.transform(sample)
+            sample = self.transform(sample)
 
         return sample
 
@@ -65,15 +66,16 @@ class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, sample):
-        spectogram, latent_factors = sample['spectrogram'], sample['latent_factors']
+        spectrogram, latent_factors = sample['spectrogram'], sample['latent_factors']
 
-        return {'spectrogram': torch.from_numpy(spectrograms),
+        return {'spectrogram': torch.from_numpy(spectrogram),
                 'latent_factors': torch.from_numpy(latent_factors)}
 
 if __name__ == '__main__':
     item_factors = pickle.load(open('../../item_wmf_50.pkl', 'rb'))
     wmf_item2i = pickle.load(open('../../index_dicts.pkl', 'rb'))['item2i']
     track_to_song = pickle.load(open('../../track_to_song.pkl', 'rb'))
+    start_time = time.time()
     transformed_dataset = SpectrogramDataset(root_dir='../../data/MillionSongSubset/audio',
                                                latent_factors=item_factors,
                                                wmf_item2i = wmf_item2i,
@@ -82,29 +84,7 @@ if __name__ == '__main__':
                                                    LogCompress(),
                                                    ToTensor()
                                                    ]))
-    print(len(transformed_dataset))
+    print("Dataset size:", len(transformed_dataset))
+
     dataloader = DataLoader(transformed_dataset, batch_size=4,
                             shuffle=True, num_workers=4)
-
-    # # Helper function to show a batch
-    def show_batch(sample_batched):
-        """Show spectograms for a batch of samples."""
-        images_batch = sample_batched['spectograms']
-        batch_size = len(images_batch)
-        im_size = images_batch.size(2)
-
-        grid = utils.make_grid(images_batch)
-        plt.imshow(grid.numpy().transpose((1, 2, 0)))
-        plt.title('Batch from dataloader')
-    for i_batch, sample_batched in enumerate(dataloader):
-        print(i_batch, sample_batched['image'].size(),
-              sample_batched['latent_factors'].size())
-        print('Jode')
-        # observe 4th batch and stop.
-        if i_batch == 3:
-            plt.figure()
-            show_batch(sample_batched)
-            plt.axis('off')
-            plt.ioff()
-            plt.show()
-            break
