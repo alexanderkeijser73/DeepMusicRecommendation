@@ -5,14 +5,16 @@ import hdf5_utils
 import hdf5_getters as GETTERS
 import re
 import wget
-import signal
-import sys
+import pickle
+
 
 total_count = 0
 unavailable_count = 0
 unfound_count = 0
 
 OUTDIR = '../../data/MillionSongSubset/audio'
+wmf_item2i = pickle.load(open('../../index_dicts.pkl', 'rb'))['item2i']
+track_to_song = pickle.load(open('../../track_to_song.pkl', 'rb'))
 
 h5path = '../../data/msd_summary_file.h5'
 
@@ -30,7 +32,7 @@ for i in range(num_songs):
     track_id = GETTERS.get_track_id(h5, songidx=i).decode('utf-8')
 
     out_path = os.path.join(OUTDIR, os.path.splitext(track_id)[0]) + '.mp3'
-    if os.path.exists(out_path):
+    if os.path.exists(out_path) or not track_to_song[track_id] in wmf_item2i.keys():
         continue
 
     track_name = re.sub('_', '', track_name)

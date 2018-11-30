@@ -7,11 +7,12 @@ from librosa.feature import melspectrogram
 import numpy as np
 import pickle
 import time
+import glob
 
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectograms for audio samples"""
 
-    def __init__(self, root_dir, latent_factors, wmf_item2i, track_to_song, transform=None):
+    def __init__(self, root_dir, latent_factors, wmf_item2i, track_to_song, file_type='.mp3', transform=None):
         """
         Args:
             root_dir (string): Directory with all the audio samples.
@@ -24,15 +25,21 @@ class SpectrogramDataset(Dataset):
         self.wmf_item2i = wmf_item2i
         self.tra2so = track_to_song
         number = 0
-        files = {}
-        for file_name in sorted(os.listdir(root_dir)):
-            song_name = track_to_song[os.path.splitext(file_name)[0]]
+        sample_index = {}
+        files = glob.glob(os.path.join(root_dir,'*'+file_type))
+        for file_name in sorted(files):
+            track_name = os.path.basename(file_name)
+            track_id = os.path.splitext(track_name)[0]
+            try:
+                song_name = track_to_song[track_id]
+            except KeyError:
+                continue
             if song_name in wmf_item2i.keys():
-                files[number] = file_name
+                sample_index[number] = track_name
                 number += 1
 
                 # assert get_duration(filename=os.path.join(root_dir, file_name)) == 30, f"found duration: {get_duration(filename=os.path.join(root_dir, file_name))}"
-        self.files = files
+        self.files = sample_index
 
     def __len__(self):
         return len(self.files)
