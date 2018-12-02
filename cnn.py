@@ -2,8 +2,49 @@ import torch.nn as nn
 import pickle
 import time
 from src.dataset import SpectrogramDataset, LogCompress, ToTensor
+import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
+import torch.nn.functional as F
+
+class AudioCNN(nn.Module):
+
+    def __init__(self):
+        super(AudioCNN, self).__init__()
+        # Convolutional layers
+        self.conv1 = nn.Conv1d(128, 256, 4)
+        self.conv2 = nn.Conv1d(256, 256, 4)
+        self.conv3 = nn.Conv1d(256, 512, 4)
+        self.conv4 = nn.Conv1d(512, 512, 4)
+        # Pooling layers
+        self.max_pool4 = nn.MaxPool1d(4)
+        self.max_pool2 = nn.MaxPool1d(2)
+        self.max_pool_global = nn.MaxPool1d(80)
+        self.avg_pool_global = nn.AvgPool1d(80)
+        # Fully connected layers
+        self.fc1 = nn.Linear(1536, 2048)
+        self.fc2 = nn.Linear(2048, 2048)
+        self.fc3 = nn.Linear(2048, 50)
+
+    def forward(self, input):
+        # Convolutional layers
+        out = F.relu(self.conv1(input))
+        out = self.max_pool4(out)
+        out = F.relu(self.conv2(out))
+        out = self.max_pool2(out)
+        out = F.relu(self.conv3(out))
+        out = self.max_pool2(out)
+        out = F.relu(self.conv4(out))
+        # Global temporal pooling layer
+        max_p = self.global_pool1(out)
+        avg_p = self.global_pool2(out)
+        L2_p = torch.sqrt(self.avg_pool_global(out.pow(2)))
+        global_temporal = torch.cat((max_p, avg_p, L2_p), dim=2)
+        # Fully connected layers
+        out = F.relu(self.fc1(global_temporal))
+        out = F.relu(self.fc2(out))
+        out = self.fc3(out)
+        return out
 
 
 if __name__ == '__main__':
@@ -24,3 +65,8 @@ if __name__ == '__main__':
 
     dataloader = DataLoader(transformed_dataset, batch_size=4,
                             shuffle=True, num_workers=4)
+
+    for i, batch in enumerate(dataloader):
+        print(batch['spectrogram'].size())
+        if i==3: break
+    print('kaka')

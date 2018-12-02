@@ -49,6 +49,7 @@ class SpectrogramDataset(Dataset):
                                   self.files[idx])
         y, sr = load(audio_name)
         mel_spectrogram = melspectrogram(y=y, sr=sr, n_fft=1024, hop_length=512, n_mels=128)
+        mel_spectrogram = mel_spectrogram[:, :1280]
         latent_factors = self.latent_factors[idx]
         sample = {'spectrogram': mel_spectrogram, 'latent_factors': latent_factors}
 

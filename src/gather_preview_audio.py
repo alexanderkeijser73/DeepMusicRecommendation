@@ -26,7 +26,7 @@ h5 = hdf5_utils.open_h5_file_read(h5path)
 num_songs = GETTERS.get_num_songs(h5)
 
 
-for i in range(num_songs):
+for i in range(16200, num_songs):
     artist_name = GETTERS.get_artist_name(h5, songidx=i).decode('utf-8')
     track_name = GETTERS.get_title(h5, songidx=i).decode('utf-8')
     track_id = GETTERS.get_track_id(h5, songidx=i).decode('utf-8')
