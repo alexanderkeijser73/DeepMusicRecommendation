@@ -104,3 +104,5 @@ if __name__ == '__main__':
     batch = dataloader_iter.next()
     print(f"Loading one batch took {time.time() - start_time} seconds")
     print(batch['spectrogram'].size())
+    for batch in dataloader:
+        print(batch['spectrogram'].size())

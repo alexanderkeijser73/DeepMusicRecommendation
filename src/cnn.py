@@ -54,7 +54,7 @@ if __name__ == '__main__':
     track_to_song = pickle.load(open('../track_to_song.pkl', 'rb'))
 
     start_time = time.time()
-    transformed_dataset = SpectrogramDataset(root_dir='../data/MillionSongSubset/audio',
+    transformed_dataset = SpectrogramDataset(root_dir='../data/MillionSongSubset/spectrograms',
                                                latent_factors=item_factors,
                                                wmf_item2i = wmf_item2i,
                                                 track_to_song=track_to_song,
@@ -62,21 +62,22 @@ if __name__ == '__main__':
                                                    LogCompress(),
                                                    ToTensor()
                                                    ]))
-    # print(f"Time for building dataset: {time.time() - start_time}")
-    # print("Dataset size:", len(transformed_dataset))
+    print(f"Time for building dataset: {time.time() - start_time}")
+    print("Dataset size:", len(transformed_dataset))
 
     start_time = time.time()
     dataloader = DataLoader(transformed_dataset, batch_size=64,
                             shuffle=True, num_workers=4)
     # print(f"Time for building data loader: {time.time() - start_time}")
 
-    # start_time = time.time()
+    start_time = time.time()
     model = AudioCNN()
-    # print(f"Time for building CNN: {time.time() - start_time}")
+    print(f"Time for building CNN: {time.time() - start_time:.2f} seconds")
     start_time_bla = time.time()
     for i, batch in enumerate(dataloader):
         start_time = time.time()
-        # print(model(batch['spectrogram']).size())
-        # print(f"Time for loading samples: {time.time() - start_time}")
+        batch_output = model(batch['spectrogram'])
+
+        print(f"Time for batch of {batch_output.size()[0]} samples: {time.time() - start_time:.2f} seconds")
         if i==3: break
     # print(f"Time voor die hele ding: {time.time() - start_time_bla}")
