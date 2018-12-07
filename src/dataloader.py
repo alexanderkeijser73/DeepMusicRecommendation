@@ -37,8 +37,6 @@ class SpectrogramDataset(Dataset):
             if song_name in wmf_item2i.keys():
                 sample_index[number] = track_name
                 number += 1
-
-                # assert get_duration(filename=os.path.join(root_dir, file_name)) == 30, f"found duration: {get_duration(filename=os.path.join(root_dir, file_name))}"
         self.files = sample_index
 
     def __len__(self):
@@ -48,16 +46,14 @@ class SpectrogramDataset(Dataset):
         # start_time = time.time()
         file_name = os.path.join(self.root_dir,
                                   self.files[idx])
-        # y, sr = load(audio_name)
-        # mel_spectrogram = melspectrogram(y=y, sr=sr, n_fft=1024, hop_length=512, n_mels=128)
-        # mel_spectrogram = mel_spectrogram[:, :1280]
         mel_spectrogram = np.load(file_name)[:, :1280]
+        assert mel_spectrogram.shape == (128, 1280), f'found shape: {mel_spectrogram.shape} for example: {self.files[idx]}'
         latent_factors = self.latent_factors[idx]
+        assert latent_factors.shape == (50,), f'found shape: {latent_factors.shape} for example: {self.files[idx]}'
         sample = {'spectrogram': mel_spectrogram, 'latent_factors': latent_factors}
 
         if self.transform:
             sample = self.transform(sample)
-        # print(f"Time for __getitem__: {time.time() - start_time}")
         return sample
 
 class LogCompress(object):
