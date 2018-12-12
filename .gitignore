@@ -1,3 +1,10 @@
 MSongsDB
 wmf
 src/string.txt
+*.mp3
+*.npy
+data/.DS_Store
+tensorboard_summaries/events.out.tfevents.1544653803.Alexander-MacBook-Pro
+*.Alexander-MacBook-Pro
+*.pyc
+tensorboard_summaries/.DS_Store

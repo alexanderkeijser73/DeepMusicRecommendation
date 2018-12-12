@@ -1,10 +1,10 @@
 import os
-import time
+from time import strftime
 import pickle
 import argparse
 from datetime import datetime
 from tensorboardX import SummaryWriter
-
+import numpy as np
 import torch
 import torch.nn as nn
 import time
@@ -13,8 +13,12 @@ from src.cnn import AudioCNN
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from torch.utils.data.sampler import SubsetRandomSampler
+import logging
 
-
+time_now = strftime('%d_%b_%H_%M_%S')
+logging.basicConfig(filename=f'{time_now}.log', filemode='w', format='%(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 def calc_accuracy(output, batch_targets):
     """ Calculate the accuracy of a prediction given labels
@@ -31,7 +35,7 @@ def train(train_dl, valid_dl, config):
 
     model = AudioCNN()
     if torch.cuda.is_available():
-        print('kakoe')
+        logger.info('training on GPU!')
         model.cuda()
 
     criterion = nn.MSELoss()
@@ -43,7 +47,7 @@ def train(train_dl, valid_dl, config):
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         # epoch = checkpoint['epoch']
-        print("Checkpoint loaded")
+        logger.info("Checkpoint loaded")
 
     total_loss = 0
     best_loss = 1e10
@@ -67,7 +71,7 @@ def train(train_dl, valid_dl, config):
             loss = criterion(outputs, batch_targets)
             total_loss += loss.item()
 
-            n_iter = (epoch * len(dataloader)) + i
+            n_iter = (epoch * len(train_dl)) + i
             # Write the outcomes to the tensorboard
             writer.add_scalar('train_loss', loss.item(), n_iter)
 
@@ -80,29 +84,29 @@ def train(train_dl, valid_dl, config):
             examples_per_second = config.batch_size / float(t2 - t1)
 
             if i % config.print_every == 0:
-                print('[{}]\t Epoch {}\t Batch {}\t Loss {} \t Examples/Sec = {:.2f},'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
+                logger.info('[{}]\t Epoch {}\t Batch {}\t Loss {} \t Examples/Sec = {:.2f},'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
                                                                                   epoch, i,  loss.item(),
                                                                                   examples_per_second))
                 total_loss = 0
 
-            if i % config.validation_freq == 0:
-                valid_batch = next(iter(valid_dl()))
-                valid_data, valid_targets = valid_batch['spectrogram'], valid_batch['latent_factors']
-                outputs = model(valid_data)
+            if i % config.validate_every == 0:
+                for valid_batch in valid_dl:
+                    valid_data, valid_targets = valid_batch['spectrogram'], valid_batch['latent_factors']
+                    outputs = model(valid_data)
 
-                # Calculate MSE loss
-                valid_loss = criterion(outputs, valid_targets)
-                writer.add_scalar('validation_loss', valid_loss.item(), n_iter)
-                print('[{}]\t Epoch {}\t Batch {}\t Validation Loss {} \t'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                                                                  epoch, i,  valid_loss.item(),
-                                                                                  examples_per_second))
-                if valid_loss.item() < best_loss:
-                    best_loss = valid_loss.item()
-                    checkpoint = {
-                        'model': model.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                    }
-                    torch.save(checkpoint, 'best_model.pt')
+                    # Calculate MSE loss
+                    valid_loss = criterion(outputs, valid_targets)
+                    writer.add_scalar('validation_loss', valid_loss.item(), n_iter)
+                    logger.info('[{}]\t Epoch {}\t Batch {}\t Validation Loss {} \t'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                                                                      epoch, i,  valid_loss.item(),
+                                                                                      examples_per_second))
+                    if valid_loss.item() < best_loss:
+                        best_loss = valid_loss.item()
+                        checkpoint = {
+                            'model': model.state_dict(),
+                            'optimizer': optimizer.state_dict(),
+                        }
+                        torch.save(checkpoint, 'best_model.pt')
 
             if config.save_every:
                 if i % config.save_every == 0:
@@ -116,10 +120,10 @@ def print_flags():
     """
     Prints all entries in FLAGS variable.
     """
-    print('\n')
+    logger.info('\n')
     for key, value in vars(config).items():
-        print(key + ' : ' + str(value))
-    print('\n')
+        logger.info(key + ' : ' + str(value))
+    logger.info('\n')
 
 
 def save_checkpoint(model, optimizer, path):
@@ -146,7 +150,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Model params
-    parser.add_argument('--data_path', type=str, default='../data/MillionSongSubset/spectrograms')
+    parser.add_argument('--data_path', type=str, default='data/spectrograms')
     parser.add_argument('--checkpoint_path', type=str, default='checkpoints_cnn', help='Path to checkpoint file')
 
     # Training params
@@ -160,6 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('--print_every', type=int, default=10, help='How often to print training progress')
     parser.add_argument('--test_every', type=int, default=100, help='How often to test the model')
     parser.add_argument('--save_every', type=int, default=None, help='How often to save checkpoint')
+    parser.add_argument('--validate_every', type=int, default=50, help='How often to evaluate on validation set')
     parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint file')
     parser.add_argument('--test_size', type=int, default=1000, help='Number of samples in the test')
 
@@ -172,9 +177,9 @@ if __name__ == "__main__":
     # print_flags()
 
     # Train the model
-    item_factors = pickle.load(open('../item_wmf_50.pkl', 'rb'))
-    wmf_item2i = pickle.load(open('../index_dicts.pkl', 'rb'))['item2i']
-    track_to_song = pickle.load(open('../track_to_song.pkl', 'rb'))
+    item_factors = pickle.load(open(os.path.join(config.data_path, '../item_wmf_50.pkl'), 'rb'))
+    wmf_item2i = pickle.load(open(os.path.join(config.data_path, '../index_dicts.pkl'), 'rb'))['item2i']
+    track_to_song = pickle.load(open(os.path.join(config.data_path, '../track_to_song.pkl'), 'rb'))
 
     start_time = time.time()
     transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
@@ -185,19 +190,28 @@ if __name__ == "__main__":
                                                    LogCompress(),
                                                    ToTensor()
                                                    ]))
-    print("Dataset size:", len(transformed_dataset))
+    logger.info(f"Dataset size: {len(transformed_dataset)}")
 
-    train_size = int(0.6 * len(transformed_dataset))
-    test_size = int(0.2 * len(transformed_dataset))
-    validation_size = len(transformed_dataset) - train_size - test_size
-    train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(
-        transformed_dataset,
-        [train_size, validation_size, test_size]
-    )
+    validation_split = .2
+    shuffle_dataset = True
+    random_seed =42
 
-    train_dl = DataLoader(train_dataset, batch_size=config.batch_size,
-                            shuffle=True, num_workers=4)
-    valid_dl = DataLoader(validation_dataset, batch_size=validation_size,
-                            shuffle=False, num_workers=4)
+    # Creating data indices for training and validation splits:
+    dataset_size = len(transformed_dataset)
+    indices = list(range(dataset_size))
+    split = int(np.floor(validation_split * dataset_size))
+    if shuffle_dataset:
+        np.random.seed(random_seed)
+        np.random.shuffle(indices)
+    train_indices, val_indices = indices[split:], indices[:split]
 
-    train(train_dl, valid_dl, config)
+    # Creating PT data samplers and loaders:
+    train_sampler = SubsetRandomSampler(train_indices)
+    valid_sampler = SubsetRandomSampler(val_indices)
+
+    train_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=config.batch_size,
+                                               sampler=train_sampler)
+    validation_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=split,
+                                                    sampler=valid_sampler)
+
+    train(train_loader, validation_loader, config)
