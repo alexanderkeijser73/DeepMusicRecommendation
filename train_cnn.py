@@ -43,7 +43,7 @@ def train(train_dl, valid_dl, config):
         model.cuda()
 
     criterion = nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=config.learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
     # Load checkpoint
     if config.checkpoint:
@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
     # Training params
     parser.add_argument('--batch_size', type=int, default=16, help='Number of examples to process in a batch')
-    parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate')
+    parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate')
     parser.add_argument('--num_epochs', type=int, default=25, help='Number of epochs')
     parser.add_argument('--max_norm', type=float, default=5.0, help='--')
 
