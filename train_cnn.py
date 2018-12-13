@@ -93,24 +93,25 @@ def train(train_dl, valid_dl, config):
                                                                                   examples_per_second))
                 total_loss = 0
 
-            if i % config.validate_every == 0:
-                for valid_batch in valid_dl:
-                    valid_data, valid_targets = valid_batch['spectrogram'], valid_batch['latent_factors']
-                    outputs = model(valid_data)
+            if config.validate_every:
+                if i % config.validate_every == 0:
+                    for valid_batch in valid_dl:
+                        valid_data, valid_targets = valid_batch['spectrogram'], valid_batch['latent_factors']
+                        outputs = model(valid_data)
 
-                    # Calculate MSE loss
-                    valid_loss = criterion(outputs, valid_targets)
-                    writer.add_scalar('validation_loss', valid_loss.item(), n_iter)
-                    logger.info('[{}]\t Epoch {}\t Batch {}\t Validation Loss {} \t'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                                                                      epoch, i,  valid_loss.item(),
-                                                                                      examples_per_second))
-                    if valid_loss.item() < best_loss:
-                        best_loss = valid_loss.item()
-                        checkpoint = {
-                            'model': model.state_dict(),
-                            'optimizer': optimizer.state_dict(),
-                        }
-                        torch.save(checkpoint, 'best_model.pt')
+                        # Calculate MSE loss
+                        valid_loss = criterion(outputs, valid_targets)
+                        writer.add_scalar('validation_loss', valid_loss.item(), n_iter)
+                        logger.info('[{}]\t Epoch {}\t Batch {}\t Validation Loss {} \t'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                                                                          epoch, i,  valid_loss.item(),
+                                                                                          examples_per_second))
+                        if valid_loss.item() < best_loss:
+                            best_loss = valid_loss.item()
+                            checkpoint = {
+                                'model': model.state_dict(),
+                                'optimizer': optimizer.state_dict(),
+                            }
+                            torch.save(checkpoint, 'best_model.pt')
 
             if config.save_every:
                 if i % config.save_every == 0:
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     parser.add_argument('--print_every', type=int, default=10, help='How often to print training progress')
     parser.add_argument('--test_every', type=int, default=100, help='How often to test the model')
     parser.add_argument('--save_every', type=int, default=None, help='How often to save checkpoint')
-    parser.add_argument('--validate_every', type=int, default=50, help='How often to evaluate on validation set')
+    parser.add_argument('--validate_every', type=int, default=None, help='How often to evaluate on validation set')
     parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint file')
     parser.add_argument('--test_size', type=int, default=1000, help='Number of samples in the test')
 
