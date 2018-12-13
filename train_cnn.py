@@ -16,9 +16,13 @@ from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 import logging
 
-time_now = strftime('%d_%b_%H_%M_%S')
-logging.basicConfig(filename=f'{time_now}.log', filemode='w', format='%(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+def make_logger():
+    if not os.path.exists('../logs'):
+        os.mkdir('../logs')
+    time_now = strftime('%d_%b_%H_%M_%S')
+    logging.basicConfig(filename=f'../logs//{time_now}.log', filemode='w', format='%(message)s', level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    return logger
 
 def calc_accuracy(output, batch_targets):
     """ Calculate the accuracy of a prediction given labels
@@ -173,6 +177,9 @@ if __name__ == "__main__":
     parser.add_argument('--model_path', type=str, default=None, help='Path to the model to test')
 
     config = parser.parse_args()
+
+    global logger
+    logger = make_logger()
 
     # print_flags()
 
