@@ -46,7 +46,10 @@ class SpectrogramDataset(Dataset):
         # start_time = time.time()
         file_name = os.path.join(self.root_dir,
                                   self.files[idx])
-        mel_spectrogram = np.load(file_name)[:, :1280]
+        try:
+            mel_spectrogram = np.load(file_name)[:, :1280]
+        except Exception:
+            raise ValueError(f'unable to load pickle file {file_name}')
         assert mel_spectrogram.shape == (128, 1280), f'found shape: {mel_spectrogram.shape} for example: {self.files[idx]}'
         latent_factors = self.latent_factors[idx]
         assert latent_factors.shape == (50,), f'found shape: {latent_factors.shape} for example: {self.files[idx]}'
