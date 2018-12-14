@@ -8,7 +8,7 @@ import numpy as np
 import pickle
 import time
 import glob
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectrograms     for audio samples"""
@@ -106,5 +106,5 @@ if __name__ == '__main__':
     print(f"Loading one batch took {time.time() - start_time} seconds")
     print(batch['spectrogram'].size())
     print(torch.min(batch['spectrogram']))
-    plt.imshow(batch['spectrogram'][0].numpy(), cmap='jet')
-    plt.show()
+    # plt.imshow(batch['spectrogram'][0].numpy(), cmap='jet')
+    # plt.show()
