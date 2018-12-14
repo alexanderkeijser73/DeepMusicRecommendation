@@ -187,7 +187,7 @@ if __name__ == "__main__":
     global logger
     logger = make_logger()
 
-    # print_flags()
+    print_flags()
 
     # Train the model
     item_factors = pickle.load(open(os.path.join(config.data_path, '../item_wmf_50.pkl'), 'rb'))
@@ -224,7 +224,7 @@ if __name__ == "__main__":
 
     train_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=config.batch_size,
                                                sampler=train_sampler)
-    validation_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=split,
+    validation_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=64,
                                                     sampler=valid_sampler)
 
     train(train_loader, validation_loader, config)
