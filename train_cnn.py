@@ -5,7 +5,6 @@ import argparse
 from datetime import datetime
 from tensorboardX import SummaryWriter
 import numpy as np
-import torch
 import torch.nn as nn
 import time
 from src.dataloader import SpectrogramDataset, LogCompress, ToTensor
@@ -24,6 +23,16 @@ def make_logger():
     logger = logging.getLogger(__name__)
     return logger
 
+def make_summary_writer(base_dir):
+    time_now = strftime('%d_%b_%H_%M_%S')
+    summary_path = os.path.join(base_dir, time_now)
+    if not os.path.exists(summary_path):
+        os.mkdir(summary_path)
+        writer = SummaryWriter(summary_path)
+    else:
+        raise OSError('Summary directory already exists.')
+    return writer
+
 def calc_accuracy(output, batch_targets):
     """ Calculate the accuracy of a prediction given labels
     """
@@ -35,7 +44,8 @@ def calc_accuracy(output, batch_targets):
 def train(train_dl, valid_dl, config):
     """ Train the model given the parameters in the config object
     """
-    writer = SummaryWriter(config.summary_path)
+
+    writer = make_summary_writer(config.summary_path)
 
     model = AudioCNN()
     if torch.cuda.is_available():
@@ -117,10 +127,6 @@ def train(train_dl, valid_dl, config):
                 if i % config.save_every == 0:
                     save_checkpoint(model, optimizer, config.checkpoint_path)
 
-
-
-
-
 def print_flags():
     """
     Prints all entries in FLAGS variable.
@@ -160,15 +166,14 @@ if __name__ == "__main__":
 
     # Training params
     parser.add_argument('--batch_size', type=int, default=16, help='Number of examples to process in a batch')
-    parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate')
+    parser.add_argument('--learning_rate', type=float, default=0.03, help='Learning rate')
     parser.add_argument('--num_epochs', type=int, default=25, help='Number of epochs')
     parser.add_argument('--max_norm', type=float, default=5.0, help='--')
 
     # Misc params
     parser.add_argument('--summary_path', type=str, default="./tensorboard_summaries/", help='Output path for summaries')
     parser.add_argument('--print_every', type=int, default=10, help='How often to print training progress')
-    parser.add_argument('--test_every', type=int, default=100, help='How often to test the model')
-    parser.add_argument('--save_every', type=int, default=None, help='How often to save checkpoint')
+    parser.add_argument('--save_every', type=int, default=250, help='How often to save checkpoint')
     parser.add_argument('--validate_every', type=int, default=None, help='How often to evaluate on validation set')
     parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint file')
     parser.add_argument('--test_size', type=int, default=1000, help='Number of samples in the test')

@@ -8,6 +8,7 @@ import numpy as np
 import pickle
 import time
 import glob
+import matplotlib.pyplot as plt
 
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectrograms     for audio samples"""
@@ -62,7 +63,7 @@ class SpectrogramDataset(Dataset):
 class LogCompress(object):
     """"Applies log-compression to input array"""
 
-    def __init__(self, offset=1e-6):
+    def __init__(self, offset=1e-5):
         self.offset = offset
 
     def __call__(self, sample):
@@ -82,11 +83,11 @@ class ToTensor(object):
 
 
 if __name__ == '__main__':
-    item_factors = pickle.load(open('../../item_wmf_50.pkl', 'rb'))
-    wmf_item2i = pickle.load(open('../../index_dicts.pkl', 'rb'))['item2i']
-    track_to_song = pickle.load(open('../../track_to_song.pkl', 'rb'))
+    item_factors = pickle.load(open('../data/item_wmf_50.pkl', 'rb'))
+    wmf_item2i = pickle.load(open('../data/index_dicts.pkl', 'rb'))['item2i']
+    track_to_song = pickle.load(open('../data/track_to_song.pkl', 'rb'))
     start_time = time.time()
-    transformed_dataset = SpectrogramDataset(root_dir='../../data/MillionSongSubset/spectrograms',
+    transformed_dataset = SpectrogramDataset(root_dir='../data/spectrograms',
                                                latent_factors=item_factors,
                                                wmf_item2i = wmf_item2i,
                                                 track_to_song=track_to_song,
@@ -101,7 +102,9 @@ if __name__ == '__main__':
     dataloader_iter = iter(dataloader)
     start_time = time.time()
     batch = dataloader_iter.next()
+
     print(f"Loading one batch took {time.time() - start_time} seconds")
     print(batch['spectrogram'].size())
-    for batch in dataloader:
-        print(batch['spectrogram'].size())
+    print(torch.min(batch['spectrogram']))
+    plt.imshow(batch['spectrogram'][0].numpy(), cmap='jet')
+    plt.show()
