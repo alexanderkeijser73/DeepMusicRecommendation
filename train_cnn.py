@@ -18,13 +18,11 @@ import logging
 def make_logger():
     if not os.path.exists('../logs'):
         os.mkdir('../logs')
-    time_now = strftime('%d_%b_%H_%M_%S')
     logging.basicConfig(filename=f'../logs//{time_now}.log', filemode='w', format='%(message)s', level=logging.DEBUG)
     logger = logging.getLogger(__name__)
     return logger
 
 def make_summary_writer(base_dir):
-    time_now = strftime('%d_%b_%H_%M_%S')
     summary_path = os.path.join(base_dir, time_now)
     if not os.path.exists(summary_path):
         os.mkdir(summary_path)
@@ -105,23 +103,23 @@ def train(train_dl, valid_dl, config):
 
             if config.validate_every:
                 if i % config.validate_every == 0:
-                    for valid_batch in valid_dl:
-                        valid_data, valid_targets = valid_batch['spectrogram'], valid_batch['latent_factors']
-                        outputs = model(valid_data)
+                    valid_batch = iter(valid_dl).next()
+                    valid_data, valid_targets = valid_batch['spectrogram'], valid_batch['latent_factors']
+                    outputs = model(valid_data)
 
-                        # Calculate MSE loss
-                        valid_loss = criterion(outputs, valid_targets)
-                        writer.add_scalar('validation_loss', valid_loss.item(), n_iter)
-                        logger.info('[{}]\t Epoch {}\t Batch {}\t Validation Loss {} \t'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                                                                          epoch, i,  valid_loss.item(),
-                                                                                          examples_per_second))
-                        if valid_loss.item() < best_loss:
-                            best_loss = valid_loss.item()
-                            checkpoint = {
-                                'model': model.state_dict(),
-                                'optimizer': optimizer.state_dict(),
-                            }
-                            torch.save(checkpoint, 'best_model.pt')
+                    # Calculate MSE loss
+                    valid_loss = criterion(outputs, valid_targets)
+                    writer.add_scalar('validation_loss', valid_loss.item(), n_iter)
+                    logger.info('[{}]\t Epoch {}\t Batch {}\t Validation Loss {} \t'.format(datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                                                                      epoch, i,  valid_loss.item(),
+                                                                                      examples_per_second))
+                    if valid_loss.item() < best_loss:
+                        best_loss = valid_loss.item()
+                        checkpoint = {
+                            'model': model.state_dict(),
+                            'optimizer': optimizer.state_dict(),
+                        }
+                        torch.save(checkpoint, f'best_model_{time_now}.pt')
 
             if config.save_every:
                 if i % config.save_every == 0:
@@ -166,15 +164,16 @@ if __name__ == "__main__":
 
     # Training params
     parser.add_argument('--batch_size', type=int, default=16, help='Number of examples to process in a batch')
+    parser.add_argument('--val_batch_size', type=int, default=256, help='Number of examples to use in validation step')
     parser.add_argument('--learning_rate', type=float, default=0.03, help='Learning rate')
     parser.add_argument('--num_epochs', type=int, default=25, help='Number of epochs')
     parser.add_argument('--max_norm', type=float, default=5.0, help='--')
 
     # Misc params
-    parser.add_argument('--summary_path', type=str, default="./tensorboard_summaries/", help='Output path for summaries')
+    parser.add_argument('--summary_path', type=str, default="../tensorboard_summaries/", help='Output path for summaries')
     parser.add_argument('--print_every', type=int, default=10, help='How often to print training progress')
     parser.add_argument('--save_every', type=int, default=250, help='How often to save checkpoint')
-    parser.add_argument('--validate_every', type=int, default=None, help='How often to evaluate on validation set')
+    parser.add_argument('--validate_every', type=int, default=10, help='How often to evaluate on validation set')
     parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint file')
     parser.add_argument('--test_size', type=int, default=1000, help='Number of samples in the test')
 
@@ -184,6 +183,8 @@ if __name__ == "__main__":
 
     config = parser.parse_args()
 
+    global time_now
+    time_now = strftime('%d_%b_%H_%M_%S')
     global logger
     logger = make_logger()
 
@@ -224,7 +225,7 @@ if __name__ == "__main__":
 
     train_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=config.batch_size,
                                                sampler=train_sampler)
-    validation_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=64,
+    validation_loader = torch.utils.data.DataLoader(transformed_dataset, batch_size=config.val_batch_size,
                                                     sampler=valid_sampler)
 
     train(train_loader, validation_loader, config)
