@@ -1,0 +1,9 @@
+torchvision==0.2.1
+scipy==1.0.0
+librosa==0.6.2
+torch==1.0.0
+numpy==1.13.3
+scikit_learn==0.20.1
+tables==3.4.4
+tensorboardX==1.5
+wget==3.2
