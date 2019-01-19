@@ -14,6 +14,30 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 import logging
+from sklearn.metrics import roc_auc_score
+
+def calc_play_counts(item_factor_prediction, user_factors, play_count_targets):
+    """Calculate play_counts from predicted item factors
+    """
+    play_count_predictions = item_factor_prediction @ torch.t(torch.from_numpy(user_factors))
+    binary_predictions = torch.round(torch.clamp(play_count_predictions, 0, 1))
+    return binary_predictions
+
+def calc_accuracy(predictions, play_count_targets):
+    """Calculate accuracy of play_counts calculated from predicted item factors
+    """
+    predictions = torch.flatten(predictions)
+    targets = torch.flatten(play_count_targets)
+    accuracy = float(torch.sum(targets==predictions))/targets.numel()
+    return accuracy
+
+def calc_auc(predictions, play_count_targets):
+    """Calculate auc of play_counts calculated from predicted item factors
+    """
+    predictions = torch.flatten(predictions)
+    targets = torch.flatten(play_count_targets)
+    auc = roc_auc_score(targets, predictions)
+    return auc
 
 def make_logger():
     if not os.path.exists('../logs'):
@@ -30,13 +54,6 @@ def make_summary_writer(base_dir):
     else:
         raise OSError('Summary directory already exists.')
     return writer
-
-def calc_accuracy(output, batch_targets):
-    """ Calculate the accuracy of a prediction given labels
-    """
-    predictions = torch.argmax(output, dim=1)
-    correct_predictions = torch.eq(predictions, batch_targets).sum()
-    return float(correct_predictions.item() / len(batch_targets)) * 100
 
 
 def train(train_dl, valid_dl, config):
@@ -68,7 +85,9 @@ def train(train_dl, valid_dl, config):
             t1 = time.time()
 
             # load new batch
-            batch_data, batch_targets = batch['spectrogram'], batch['latent_factors']
+            batch_data, batch_targets, batch_item_play_counts = batch['spectrogram'], \
+                                                                batch['item_factors'], \
+                                                                batch['item_play_counts']
 
             if torch.cuda.is_available():
                 batch_data, batch_targets = batch_data.cuda(), batch_targets.cuda()
@@ -104,7 +123,9 @@ def train(train_dl, valid_dl, config):
             if config.validate_every:
                 if i % config.validate_every == 0:
                     valid_batch = iter(valid_dl).next()
-                    valid_data, valid_targets = valid_batch['spectrogram'], valid_batch['latent_factors']
+                    valid_data, valid_targets, valid_play_counts = valid_batch['spectrogram'], \
+                                                                   valid_batch['item_factors'], \
+                                                                   valid_batch['item_play_counts']
                     outputs = model(valid_data)
 
                     # Calculate MSE loss
@@ -191,16 +212,23 @@ if __name__ == "__main__":
     print_flags()
 
     # Train the model
-    item_factors = pickle.load(open(os.path.join(config.data_path, '../item_wmf_50.pkl'), 'rb'))
-    wmf_item2i = pickle.load(open(os.path.join(config.data_path, '../index_dicts.pkl'), 'rb'))['item2i']
-    track_to_song = pickle.load(open(os.path.join(config.data_path, '../track_to_song.pkl'), 'rb'))
+    user_item_matrix = pickle.load(open(os.path.join(config.data_path, '../wmf/user_item_matrix.pkl'), 'rb'))
+    item_factors = pickle.load(open(os.path.join(config.data_path, '../wmf/item_wmf_50.pkl'), 'rb'))
+    user_factors = pickle.load(open(os.path.join(config.data_path, '../wmf/user_wmf_50.pkl'), 'rb'))
+    print(user_factors.shape, item_factors.shape)
+    wmf_item2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['item2i']
+    wmf_user2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['user2i']
+    track_to_song = pickle.load(open(os.path.join(config.data_path, '../wmf/track_to_song.pkl'), 'rb'))
 
     start_time = time.time()
     transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
-                                               latent_factors=item_factors,
-                                               wmf_item2i = wmf_item2i,
-                                                track_to_song=track_to_song,
-                                               transform=transforms.Compose([
+                                            user_item_matrix=user_item_matrix,
+                                            item_factors=item_factors,
+                                            user_factors=user_factors,
+                                            wmf_item2i = wmf_item2i,
+                                            wmf_user2i=wmf_user2i,
+                                            track_to_song=track_to_song,
+                                            transform=transforms.Compose([
                                                    LogCompress(),
                                                    ToTensor()
                                                    ]))

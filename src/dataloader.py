@@ -13,7 +13,7 @@ import glob
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectrograms     for audio samples"""
 
-    def __init__(self, root_dir, latent_factors, wmf_item2i, track_to_song, file_type='.npy', transform=None):
+    def __init__(self, root_dir, user_item_matrix, item_factors, user_factors, wmf_item2i, wmf_user2i, track_to_song, file_type='.npy', transform=None):
         """
         Args:
             root_dir (string): Directory with all the audio samples.
@@ -22,8 +22,11 @@ class SpectrogramDataset(Dataset):
         """
         self.root_dir = root_dir
         self.transform = transform
-        self.latent_factors = latent_factors
+        self.item_factors = item_factors
+        self.user_item_matrix = user_item_matrix
+        self.user_factors = user_factors
         self.wmf_item2i = wmf_item2i
+        self.wmf_user2i = wmf_user2i
         self.tra2so = track_to_song
         number = 0
         sample_index = {}
@@ -52,9 +55,10 @@ class SpectrogramDataset(Dataset):
         except Exception:
             raise ValueError(f'unable to load pickle file {file_name}')
         assert mel_spectrogram.shape == (128, 1280), f'found shape: {mel_spectrogram.shape} for example: {self.files[idx]}'
-        latent_factors = self.latent_factors[idx]
-        assert latent_factors.shape == (50,), f'found shape: {latent_factors.shape} for example: {self.files[idx]}'
-        sample = {'spectrogram': mel_spectrogram, 'latent_factors': latent_factors}
+        item_factors = self.item_factors[idx]
+        assert item_factors.shape == (50,), f'found shape: {item_factors.shape} for example: {self.files[idx]}'
+        item_play_counts = self.user_item_matrix[:, idx]
+        sample = {'spectrogram': mel_spectrogram, 'item_factors': item_factors, 'item_play_counts': item_play_counts}
 
         if self.transform:
             sample = self.transform(sample)
@@ -67,19 +71,20 @@ class LogCompress(object):
         self.offset = offset
 
     def __call__(self, sample):
-        spectogram, latent_factors = sample['spectrogram'], sample['latent_factors']
+        spectogram, item_factors, item_play_counts = sample['spectrogram'], sample['item_factors'], sample['item_play_counts']
         log_mel_spectrograms = np.log(spectogram + self.offset)
 
-        return {'spectrogram': log_mel_spectrograms, 'latent_factors': latent_factors}
+        return {'spectrogram': log_mel_spectrograms, 'item_factors': item_factors, 'item_play_counts': item_play_counts}
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, sample):
-        spectrogram, latent_factors = sample['spectrogram'], sample['latent_factors']
+        spectrogram, item_factors, item_play_counts = sample['spectrogram'], sample['item_factors'], sample['item_play_counts']
 
         return {'spectrogram': torch.from_numpy(spectrogram).type(torch.FloatTensor),
-                'latent_factors': torch.from_numpy(latent_factors).type(torch.FloatTensor)}
+                'item_factors': torch.from_numpy(item_factors).type(torch.FloatTensor),
+                'item_play_counts': torch.from_numpy(item_play_counts.toarray()).type(torch.FloatTensor)}
 
 
 if __name__ == '__main__':
@@ -88,7 +93,7 @@ if __name__ == '__main__':
     track_to_song = pickle.load(open('../data/track_to_song.pkl', 'rb'))
     start_time = time.time()
     transformed_dataset = SpectrogramDataset(root_dir='../data/spectrograms',
-                                               latent_factors=item_factors,
+                                               item_factors=item_factors,
                                                wmf_item2i = wmf_item2i,
                                                 track_to_song=track_to_song,
                                                transform=transforms.Compose([
