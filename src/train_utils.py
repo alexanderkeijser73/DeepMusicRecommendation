@@ -3,6 +3,7 @@ import logging
 from sklearn.metrics import roc_auc_score
 from tensorboardX import SummaryWriter
 import os
+from datetime import datetime
 
 def calc_play_counts(item_factor_prediction, user_factors, play_count_targets):
     """Calculate play_counts from predicted item factors
