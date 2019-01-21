@@ -5,7 +5,7 @@ from tensorboardX import SummaryWriter
 import os
 from datetime import datetime
 
-def calc_play_counts(item_factor_prediction, user_factors, play_count_targets):
+def calc_play_counts(item_factor_prediction, user_factors):
     """Calculate play_counts from predicted item factors
     """
     play_count_predictions = item_factor_prediction @ torch.t(torch.from_numpy(user_factors))
