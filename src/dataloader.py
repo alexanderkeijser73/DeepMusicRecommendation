@@ -2,14 +2,10 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import os
-from librosa.core import get_duration, load
-from librosa.feature import melspectrogram
 import numpy as np
 import pickle
 import time
 import glob
-# import matplotlib.pyplot as plt
-
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectrograms     for audio samples"""
 
@@ -57,7 +53,10 @@ class SpectrogramDataset(Dataset):
         assert mel_spectrogram.shape == (128, 1280), f'found shape: {mel_spectrogram.shape} for example: {self.files[idx]}'
         item_factors = self.item_factors[idx]
         assert item_factors.shape == (50,), f'found shape: {item_factors.shape} for example: {self.files[idx]}'
+
         item_play_counts = self.user_item_matrix[:, idx]
+        # use round and clamp functions to make play counts binary targets
+        item_play_counts.data = np.around(np.clip(item_play_counts.data, 0, 1))
         sample = {'spectrogram': mel_spectrogram, 'item_factors': item_factors, 'item_play_counts': item_play_counts}
 
         if self.transform:

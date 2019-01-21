@@ -98,12 +98,13 @@ def train(train_dl, valid_dl, config):
                                                               valid_play_count_targets)
                     valid_acc = calc_accuracy(play_count_predictions, valid_play_count_targets)
                     valid_auc = calc_auc(play_count_predictions, valid_play_count_targets)
+                    writer.add_scalar('validation_auc', valid_auc, n_iter)
 
                     logger.info(f'[{datetime.now().strftime("%Y-%m-%d %H:%M")}]\t '
                                 f'Epoch {epoch}\t '
                                 f'Batch {i}\t '
                                 f'Loss {valid_loss.item():.2g} \t '
-                                f'Valid auc {valid_auc:.2f}'
+                                f'Valid auc {valid_auc:.2f} \t'
                                 f'Examples/Sec = {examples_per_second:.2f},'
                                 )
                     if valid_loss.item() < best_loss:

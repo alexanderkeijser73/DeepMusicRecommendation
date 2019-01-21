@@ -25,7 +25,7 @@ def calc_auc(predictions, play_count_targets):
     """
     predictions = torch.flatten(predictions)
     targets = torch.flatten(play_count_targets)
-    auc = roc_auc_score(targets, predictions)
+    auc = roc_auc_score(targets.detach().numpy(), predictions.detach().numpy())
     return auc
 
 def make_logger(time_now):
