@@ -11,3 +11,4 @@ tensorboard_summaries/.DS_Store
 *.tar
 *.pt
 .idea/workspace.xml
+.idea/workspace.xml
