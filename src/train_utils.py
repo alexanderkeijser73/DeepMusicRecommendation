@@ -60,17 +60,21 @@ def print_flags(config, logger):
     logger.info('\n')
 
 
-def save_checkpoint(model, optimizer, path):
+def save_checkpoint(model, optimizer, rootdir, filename=None, auc=None):
     """ Save the trained model checkpoint
     """
-    if not os.path.exists(path):
-        os.mkdir(path)
-    filename = "{}/checkpoint_{}.pth.tar".format(path, datetime.now().strftime("%d_%m_%H_%M"),)
+    if not os.path.exists(rootdir):
+        os.mkdir(rootdir)
+    if filename is None:
+        time_stamp = datetime.now().strftime("%d_%m_%H_%M")
+        filename = f'checkpoint_{time_stamp}.pth.tar'
+    path = os.path.join(rootdir, filename)
     checkpoint = {
-        'model': model.state_dict(),
-        'optimizer': optimizer.state_dict(),
-        }
-    torch.save(checkpoint, filename)
+    'model': model.state_dict(),
+    'optimizer': optimizer.state_dict(),
+    'auc' : auc
+    }
+    torch.save(checkpoint, path)
 
 
 def load_checkpoint(filepath):

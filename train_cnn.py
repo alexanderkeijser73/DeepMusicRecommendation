@@ -35,7 +35,7 @@ def train(train_dl, valid_dl, config):
         logger.info("Checkpoint loaded")
 
     total_loss = 0
-    best_loss = 1e10
+    best_auc = 0
     for epoch in range(config.num_epochs):
         for i, batch in enumerate(train_dl):
             t1 = time.time()
@@ -95,7 +95,6 @@ def train(train_dl, valid_dl, config):
                     # Calculate accuracy
                     play_count_predictions = calc_play_counts(item_factor_predictions,
                                                               user_factors)
-                    valid_acc = calc_accuracy(play_count_predictions, valid_play_count_targets)
                     valid_auc = calc_auc(play_count_predictions, valid_play_count_targets)
                     writer.add_scalar('validation_auc', valid_auc, n_iter)
 
@@ -106,13 +105,17 @@ def train(train_dl, valid_dl, config):
                                 f'Valid auc {valid_auc:.2f} \t'
                                 f'Examples/Sec = {examples_per_second:.2f},'
                                 )
-                    if valid_loss.item() < best_loss:
-                        best_loss = valid_loss.item()
+                    if valid_auc > best_auc:
+                        best_auc = valid_auc
                         checkpoint = {
                             'model': model.state_dict(),
                             'optimizer': optimizer.state_dict(),
                         }
-                        torch.save(checkpoint, f'best_model_{time_now}.pt')
+                        save_checkpoint(model,
+                                        optimizer,
+                                        config.checkpoint_path,
+                                        filename='best_model.pth.tar',
+                                        auc=valid_auc)
 
             if config.save_every:
                 if i % config.save_every == 0:
