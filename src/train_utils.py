@@ -17,7 +17,7 @@ def calc_accuracy(predictions, play_count_targets):
     """
     predictions = torch.flatten(predictions)
     targets = torch.flatten(play_count_targets)
-    accuracy = float(torch.sum(tourch.round(targets)==predictions))/targets.numel()
+    accuracy = float(torch.sum(torch.round(targets)==predictions))/targets.numel()
     return accuracy
 
 def calc_auc(predictions, play_count_targets):
