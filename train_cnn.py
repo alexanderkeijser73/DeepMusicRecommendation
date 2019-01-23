@@ -31,7 +31,6 @@ def train(train_dl, valid_dl, config):
         checkpoint = torch.load(config.checkpoint)
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
-        # epoch = checkpoint['epoch']
         logger.info("Checkpoint loaded")
 
     total_loss = 0
@@ -58,8 +57,8 @@ def train(train_dl, valid_dl, config):
             loss = criterion(item_factor_predictions, batch_targets)
             total_loss += loss.item()
 
-            n_iter = (epoch * len(train_dl)) + i
             # Write the outcomes to the tensorboard
+            n_iter = (epoch * len(train_dl)) + i
             writer.add_scalar('train_loss', loss.item(), n_iter)
 
             # Getting gradients w.r.t. parameters
@@ -107,14 +106,10 @@ def train(train_dl, valid_dl, config):
                                 )
                     if valid_auc > best_auc:
                         best_auc = valid_auc
-                        checkpoint = {
-                            'model': model.state_dict(),
-                            'optimizer': optimizer.state_dict(),
-                        }
                         save_checkpoint(model,
                                         optimizer,
                                         config.checkpoint_path,
-                                        filename='best_model.pth.tar',
+                                        filename=f'best_model_{time_now}.pth.tar',
                                         auc=valid_auc)
 
             if config.save_every:
@@ -130,9 +125,7 @@ if __name__ == "__main__":
     logger = make_logger(time_now)
     print_flags(config, logger)
 
-    # Train the model
     user_item_matrix = pickle.load(open(os.path.join(config.data_path, '../wmf/user_item_matrix.pkl'), 'rb'))
-
     wmf_item2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['item2i']
     wmf_user2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['user2i']
     track_to_song = pickle.load(open(os.path.join(config.data_path, '../wmf/track_to_song.pkl'), 'rb'))
