@@ -94,8 +94,7 @@ def train(train_dl, valid_dl, config):
 
                     # Calculate accuracy
                     play_count_predictions = calc_play_counts(item_factor_predictions,
-                                                              user_factors,
-                                                              valid_play_count_targets)
+                                                              user_factors)
                     valid_acc = calc_accuracy(play_count_predictions, valid_play_count_targets)
                     valid_auc = calc_auc(play_count_predictions, valid_play_count_targets)
                     writer.add_scalar('validation_auc', valid_auc, n_iter)
