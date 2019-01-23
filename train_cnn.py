@@ -134,6 +134,8 @@ if __name__ == "__main__":
     wmf_item2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['item2i']
     wmf_user2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['user2i']
     track_to_song = pickle.load(open(os.path.join(config.data_path, '../wmf/track_to_song.pkl'), 'rb'))
+    item_factors = pickle.load(open(os.path.join(config.data_path,  '../wmf/item_wmf_50.pkl'), 'rb'))
+    user_factors = pickle.load(open(os.path.join(config.data_path,  '../wmf/user_wmf_50.pkl'), 'rb'))
 
     start_time = time.time()
     transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
