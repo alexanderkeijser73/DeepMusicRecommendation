@@ -9,15 +9,15 @@ def calc_play_counts(item_factor_prediction, user_factors):
     """Calculate play_counts from predicted item factors
     """
     play_count_predictions = item_factor_prediction @ torch.t(torch.from_numpy(user_factors))
-    binary_predictions = torch.round(torch.clamp(play_count_predictions, 0, 1))
-    return binary_predictions
+    predictions = torch.clamp(play_count_predictions, 0, 1)
+    return predictions
 
 def calc_accuracy(predictions, play_count_targets):
     """Calculate accuracy of play_counts calculated from predicted item factors
     """
     predictions = torch.flatten(predictions)
     targets = torch.flatten(play_count_targets)
-    accuracy = float(torch.sum(targets==predictions))/targets.numel()
+    accuracy = float(torch.sum(tourch.round(targets)==predictions))/targets.numel()
     return accuracy
 
 def calc_auc(predictions, play_count_targets):
