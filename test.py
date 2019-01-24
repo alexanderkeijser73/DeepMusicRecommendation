@@ -72,7 +72,8 @@ for i, test_batch in enumerate(test_dl):
 
     batch_auc = calc_auc(predictions, targets)
     mean_auc = mean_auc + float(batch_auc - mean_auc) / (i + 1)
-    print(f'calculated {16*(i+1)}/{dataset_size} predictions - batch AUC: {batch_auc:.2f}')
-    break
+    print(f'calculated {16*(i+1)}/{dataset_size} predictions '
+          f'- batch AUC: {batch_auc:.2f} '
+          f'- average AUC: {mean_auc:.2f}')
 
 print('------------------------------------------------------\nMEAN AUC:', mean_auc)
