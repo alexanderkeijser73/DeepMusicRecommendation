@@ -12,8 +12,10 @@ from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 from src.train_utils import *
 
-data_path = '/var/scratch/akeijser/data/test_spectrograms'
-checkpoint = load_checkpoint('/var/scratch/akeijser/checkpoints_cnn/best_model_auc_0_72.pth.tar')
+root_dir = '/var/scratch/akeijser/'
+# root_dir = ''
+data_path = root_dir + 'data/test_spectrograms'
+checkpoint = load_checkpoint(root_dir + 'checkpoints_cnn/best_model_auc_0_72.pth.tar')
 batch_size = 16
 
 user_item_matrix  = pickle.load(open(os.path.join(data_path, '../wmf/user_item_matrix.pkl'), 'rb'))
@@ -54,6 +56,8 @@ predictions = torch.empty((0, user_item_matrix.shape[0]))
 targets = torch.empty((0, user_item_matrix.shape[0]))
 
 print('processing test examples')
+
+mean_auc = 0
 for i, test_batch in enumerate(test_dl):
     test_data, test_targets, test_play_count_targets = test_batch['spectrogram'], \
                                                           test_batch['item_factors'], \
@@ -65,8 +69,10 @@ for i, test_batch in enumerate(test_dl):
                                               user_factors)
     predictions = torch.cat((predictions, play_count_predictions), dim=0)
     targets = torch.cat((targets, torch.squeeze(test_play_count_targets)), dim=0)
-    print(f'calculated {16*(i+1)}/{dataset_size} predictions')
 
-print('calculating AUC')
-auc = calc_auc(predictions, targets)
-print(auc)
+    batch_auc = calc_auc(predictions, targets)
+    mean_auc = mean_auc + float(batch_auc - mean_auc) / (i + 1)
+    print(f'calculated {16*(i+1)}/{dataset_size} predictions - batch AUC: {batch_auc:.2f}')
+    break
+
+print('------------------------------------------------------\nMEAN AUC:', mean_auc)
