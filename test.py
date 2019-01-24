@@ -12,7 +12,8 @@ from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 from src.train_utils import *
 
-data_path = 'data/test_spectrograms'
+data_path = '/var/scratch/akeijser/data/test_spectrograms'
+checkpoint = load_checkpoint('/var/scratch/akeijser/checkpoints_cnn/best_model_auc_0_72.pth.tar')
 batch_size = 16
 
 user_item_matrix  = pickle.load(open(os.path.join(data_path, '../wmf/user_item_matrix.pkl'), 'rb'))
@@ -43,7 +44,7 @@ print(f"Dataset size: {dataset_size}")
 test_dl = torch.utils.data.DataLoader(transformed_dataset,
                                            batch_size=batch_size)
 
-checkpoint = load_checkpoint('checkpoints_cnn/best_model_auc_0_72.pth.tar')
+
 model = AudioCNN()
 model.load_state_dict(checkpoint['model'])
 model.eval()
@@ -65,7 +66,6 @@ for i, test_batch in enumerate(test_dl):
     predictions = torch.cat((predictions, play_count_predictions), dim=0)
     targets = torch.cat((targets, torch.squeeze(test_play_count_targets)), dim=0)
     print(f'calculated {16*(i+1)}/{dataset_size} predictions')
-    if i==2: break
 
 print('calculating AUC')
 auc = calc_auc(predictions, targets)
