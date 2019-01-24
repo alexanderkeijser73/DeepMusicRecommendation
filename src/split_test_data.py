@@ -6,8 +6,8 @@ random_seed = 42
 np.random.seed(random_seed)
 
 test_split = 0.2
-root_dir = '/var/scratch/akeijser/data/spectrograms'
-test_dir = '/var/scratch/akeijser/data/test_spectrograms'
+root_dir = '../data/spectrograms'
+test_dir = '../data/test_spectrograms'
 files = glob.glob(os.path.join(root_dir,'*npy'))
 files = sorted(files)
 
