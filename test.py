@@ -13,6 +13,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from src.train_utils import *
 
 data_path = 'data/test_spectrograms'
+batch_size = 16
 
 user_item_matrix  = pickle.load(open(os.path.join(data_path, '../wmf/user_item_matrix.pkl'), 'rb'))
 wmf_item2i = pickle.load(open(os.path.join(data_path, '../wmf/index_dicts.pkl'), 'rb'))['item2i']
@@ -34,27 +35,38 @@ transformed_dataset = SpectrogramDataset(root_dir=data_path,
                                                        LogCompress(),
                                                        ToTensor()
                                                                     ])
-                                        )
-print(f"Dataset size: {len(transformed_dataset)}")
+                                         )
+dataset_size = len(transformed_dataset)
+print(f"Dataset size: {dataset_size}")
 
 
 test_dl = torch.utils.data.DataLoader(transformed_dataset,
-                                           batch_size=len(transformed_dataset))
+                                           batch_size=batch_size)
 
 checkpoint = load_checkpoint('checkpoints_cnn/best_model_auc_0_72.pth.tar')
-model = checkpoint['model']
+model = AudioCNN()
+model.load_state_dict(checkpoint['model'])
+model.eval()
 print('checkpoint loaded')
-valid_batch = iter(test_dl).next()
-valid_data, valid_targets, valid_play_count_targets = valid_batch['spectrogram'], \
-                                                      valid_batch['item_factors'], \
-                                                      valid_batch['item_play_counts']
-print('processing test examples')
-item_factor_predictions = model(valid_data)
 
-print('calculating predictions')
-# Calculate accuracy
-play_count_predictions = calc_play_counts(item_factor_predictions,
-                                          user_factors)
-print('calculating auc')
-valid_auc = calc_auc(play_count_predictions, valid_play_count_targets)
-print('valid auc', valid_auc)
+predictions = torch.empty((0, user_item_matrix.shape[0]))
+targets = torch.empty((0, user_item_matrix.shape[0]))
+
+print('processing test examples')
+for i, test_batch in enumerate(test_dl):
+    test_data, test_targets, test_play_count_targets = test_batch['spectrogram'], \
+                                                          test_batch['item_factors'], \
+                                                          test_batch['item_play_counts']
+    item_factor_predictions = model(test_data)
+
+    # Calculate accuracy
+    play_count_predictions = calc_play_counts(item_factor_predictions,
+                                              user_factors)
+    predictions = torch.cat((predictions, play_count_predictions), dim=0)
+    targets = torch.cat((targets, torch.squeeze(test_play_count_targets)), dim=0)
+    print(f'calculated {16*(i+1)}/{dataset_size} predictions')
+    if i==2: break
+
+print('calculating AUC')
+auc = calc_auc(predictions, targets)
+print(auc)
