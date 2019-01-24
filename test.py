@@ -12,8 +12,8 @@ from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 from src.train_utils import *
 
-root_dir = '/var/scratch/akeijser/'
-# root_dir = ''
+# root_dir = '/var/scratch/akeijser/'
+root_dir = ''
 data_path = root_dir + 'data/test_spectrograms'
 checkpoint = load_checkpoint(root_dir + 'checkpoints_cnn/best_model_auc_0_72.pth.tar')
 batch_size = 16
@@ -67,12 +67,12 @@ for i, test_batch in enumerate(test_dl):
     # Calculate accuracy
     play_count_predictions = calc_play_counts(item_factor_predictions,
                                               user_factors)
-    predictions = torch.cat((predictions, play_count_predictions), dim=0)
-    targets = torch.cat((targets, torch.squeeze(test_play_count_targets)), dim=0)
+    # predictions = torch.cat((predictions, play_count_predictions), dim=0)
+    # targets = torch.cat((targets, torch.squeeze(test_play_count_targets)), dim=0)
 
-    batch_auc = calc_auc(predictions, targets)
+    batch_auc = calc_auc(play_count_predictions, test_play_count_targets)
     mean_auc = mean_auc + float(batch_auc - mean_auc) / (i + 1)
-    print(f'calculated {16*(i+1)}/{dataset_size} predictions '
+    print(f'calculated {batch_size*(i+1)}/{dataset_size} predictions '
           f'- batch AUC: {batch_auc:.2f} '
           f'- average AUC: {mean_auc:.2f}')
 
