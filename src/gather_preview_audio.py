@@ -1,5 +1,4 @@
 import os
-import fnmatch
 from get_preview_url import get_trackid_from_text_search, get_preview_from_trackid
 import hdf5_utils
 import hdf5_getters as GETTERS
