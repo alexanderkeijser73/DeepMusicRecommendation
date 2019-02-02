@@ -51,7 +51,7 @@ def train(train_dl, valid_dl, config):
 
 
             # Forward pass to get predicted latent factors
-            item_factor_predictions = model(batch_data)
+            item_factor_predictions, _ = model(batch_data)
 
             # Calculate MSE loss
             loss = criterion(item_factor_predictions, batch_targets)
@@ -85,7 +85,12 @@ def train(train_dl, valid_dl, config):
                     valid_data, valid_targets, valid_play_count_targets = valid_batch['spectrogram'], \
                                                                    valid_batch['item_factors'], \
                                                                    valid_batch['item_play_counts']
-                    item_factor_predictions = model(valid_data)
+                    if torch.cuda.is_available():
+                        valid_data, valid_targets, valid_play_count_targets = valid_data.cuda(), \
+                                                                              valid_targets.cuda(), \
+                                                                              valid_play_count_targets.cuda()
+
+                    item_factor_predictions, _ = model(valid_data)
 
                     # Calculate MSE loss
                     valid_loss = criterion(item_factor_predictions, valid_targets)

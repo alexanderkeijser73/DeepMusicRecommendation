@@ -42,9 +42,9 @@ class AudioCNN(nn.Module):
         global_temporal = torch.cat((max_p, avg_p, L2_p), dim=1).squeeze()
         # Fully connected layers
         out = F.relu(self.fc1(global_temporal))
-        out = F.relu(self.fc2(out))
-        out = self.fc3(out)
-        return out
+        features = F.relu(self.fc2(out))
+        out = self.fc3(features)
+        return out, features
 
 
 if __name__ == '__main__':

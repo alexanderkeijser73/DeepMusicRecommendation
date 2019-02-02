@@ -11,11 +11,11 @@ total_count = 0
 unavailable_count = 0
 unfound_count = 0
 
-OUTDIR = '../../data/MillionSongSubset/audio'
-wmf_item2i = pickle.load(open('../../index_dicts.pkl', 'rb'))['item2i']
-track_to_song = pickle.load(open('../../track_to_song.pkl', 'rb'))
+OUTDIR = '../data/audio'
+wmf_item2i = pickle.load(open('../data/wmf/index_dicts.pkl', 'rb'))['item2i']
+track_to_song = pickle.load(open('../data/wmf/track_to_song.pkl', 'rb'))
 
-h5path = '../../data/msd_summary_file.h5'
+h5path = '../data/song_metadata/msd_summary_file.h5'
 
 
 if not os.path.isdir(OUTDIR):
@@ -25,7 +25,7 @@ h5 = hdf5_utils.open_h5_file_read(h5path)
 num_songs = GETTERS.get_num_songs(h5)
 
 
-for i in range(16200, num_songs):
+for i in range(num_songs):
     artist_name = GETTERS.get_artist_name(h5, songidx=i).decode('utf-8')
     track_name = GETTERS.get_title(h5, songidx=i).decode('utf-8')
     track_id = GETTERS.get_track_id(h5, songidx=i).decode('utf-8')

@@ -62,13 +62,11 @@ for i, test_batch in enumerate(test_dl):
     test_data, test_targets, test_play_count_targets = test_batch['spectrogram'], \
                                                           test_batch['item_factors'], \
                                                           test_batch['item_play_counts']
-    item_factor_predictions = model(test_data)
+    item_factor_predictions, _ = model(test_data)
 
     # Calculate accuracy
     play_count_predictions = calc_play_counts(item_factor_predictions,
                                               user_factors)
-    # predictions = torch.cat((predictions, play_count_predictions), dim=0)
-    # targets = torch.cat((targets, torch.squeeze(test_play_count_targets)), dim=0)
 
     batch_auc = calc_auc(play_count_predictions, test_play_count_targets)
     mean_auc = mean_auc + float(batch_auc - mean_auc) / (i + 1)
