@@ -7,18 +7,27 @@ import glob
 from tqdm import tqdm
 
 h5path = '../data/song_metadata/msd_summary_file.h5'
-audio_dir = '../data/audio'
-file_type = '.mp3'
+test_dir = '../data/test_spectrograms'
+train_dir = '../data/spectrograms'
+file_type = '.npy'
 
 track_id_to_info = {}
 
-files = glob.glob(os.path.join(audio_dir, '*' + file_type))
+test_files = glob.glob(os.path.join(test_dir, '*' + file_type))
+train_files = glob.glob(os.path.join(train_dir, '*' + file_type))
+
 
 print('Indexing track ids from audio file names...')
-for file_name in tqdm(sorted(files)):
+for file_name in tqdm(sorted(train_files)):
     track_name = os.path.basename(file_name)
     track_id = os.path.splitext(track_name)[0]
     track_id_to_info[track_id] = None
+for file_name in tqdm(sorted(test_files)):
+    track_name = os.path.basename(file_name)
+    track_id = os.path.splitext(track_name)[0]
+    track_id_to_info[track_id] = None
+
+print(len(track_id_to_info))
 
 h5 = hdf5_utils.open_h5_file_read(h5path)
 num_songs = GETTERS.get_num_songs(h5)

@@ -24,6 +24,7 @@ wmf_user2i = pickle.load(open(os.path.join(data_path, '../wmf/index_dicts.pkl'),
 track_to_song = pickle.load(open(os.path.join(data_path, '../wmf/track_to_song.pkl'), 'rb'))
 item_factors = pickle.load(open(os.path.join(data_path,  '../wmf/item_wmf_50.pkl'), 'rb'))
 user_factors = pickle.load(open(os.path.join(data_path,  '../wmf/user_wmf_50.pkl'), 'rb'))
+track_id_to_info = pickle.load(open(os.path.join(data_path, '../song_metadata/track_id_to_info.pkl'), 'rb'))
 
 start_time = time.time()
 print('creating dataset')
@@ -34,6 +35,7 @@ transformed_dataset = SpectrogramDataset(root_dir=data_path,
                                         wmf_item2i = wmf_item2i,
                                         wmf_user2i=wmf_user2i,
                                         track_to_song=track_to_song,
+                                         track_id_to_info=track_id_to_info,
                                         transform=transforms.Compose([
                                                        LogCompress(),
                                                        ToTensor()
@@ -62,10 +64,10 @@ for i, test_batch in enumerate(test_dl):
     test_data, test_targets, test_play_count_targets = test_batch['spectrogram'], \
                                                           test_batch['item_factors'], \
                                                           test_batch['item_play_counts']
-    item_factor_predictions, _ = model(test_data)
+    # item_factor_predictions, _ = model(test_data)
 
     # Calculate accuracy
-    play_count_predictions = calc_play_counts(item_factor_predictions,
+    play_count_predictions = calc_play_counts(test_targets,
                                               user_factors)
 
     batch_auc = calc_auc(play_count_predictions, test_play_count_targets)

@@ -9,7 +9,9 @@ import glob
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectrograms     for audio samples"""
 
-    def __init__(self, root_dir, user_item_matrix, item_factors, user_factors, wmf_item2i, wmf_user2i, track_to_song, file_type='.npy', transform=None):
+    def __init__(self, root_dir, user_item_matrix, item_factors, user_factors,
+                 wmf_item2i, wmf_user2i, track_to_song,
+                 track_id_to_info, file_type='.npy', transform=None):
         """
         Args:
             root_dir (string): Directory with all the audio samples.
@@ -24,6 +26,7 @@ class SpectrogramDataset(Dataset):
         self.wmf_item2i = wmf_item2i
         self.wmf_user2i = wmf_user2i
         self.tra2so = track_to_song
+        self.track_id_to_info = track_id_to_info
         number = 0
         sample_index = {}
         files = glob.glob(os.path.join(root_dir,'*'+file_type))
@@ -57,7 +60,18 @@ class SpectrogramDataset(Dataset):
         item_play_counts = self.user_item_matrix[:, idx]
         # use round and clamp functions to make play counts binary targets
         item_play_counts.data = np.around(np.clip(item_play_counts.data, 0, 1))
-        sample = {'spectrogram': mel_spectrogram, 'item_factors': item_factors, 'item_play_counts': item_play_counts}
+        # metadata
+        track_name = os.path.basename(file_name)
+        track_id = os.path.splitext(track_name)[0]
+        track_info = self.track_id_to_info[track_id]
+        track_info_str = f" {str(track_info['artist_name'], 'utf-8')}"
+        # track_info_str += f" - {str(track_info['track_name'], 'utf-8')}"
+        track_info_str += f" - {str(int(track_info['tempo']))}"
+        sample = {'spectrogram': mel_spectrogram,
+                  'item_factors': item_factors,
+                  'item_play_counts': item_play_counts,
+                  'track_info_str': track_info_str
+                  }
 
         if self.transform:
             sample = self.transform(sample)
@@ -70,35 +84,73 @@ class LogCompress(object):
         self.offset = offset
 
     def __call__(self, sample):
-        spectogram, item_factors, item_play_counts = sample['spectrogram'], sample['item_factors'], sample['item_play_counts']
-        log_mel_spectrograms = np.log(spectogram + self.offset)
+        spectrogram, item_factors, item_play_counts, track_info_str = sample['spectrogram'], \
+                                                                 sample['item_factors'], \
+                                                                 sample['item_play_counts'], \
+                                                                 sample['track_info_str']
 
-        return {'spectrogram': log_mel_spectrograms, 'item_factors': item_factors, 'item_play_counts': item_play_counts}
+        # spectrogram, item_factors, item_play_counts = sample['spectrogram'], \
+        #                                                           sample['item_factors'], \
+        #                                                           sample['item_play_counts']
+        log_mel_spectrograms = np.log(spectrogram + self.offset)
+
+        return {'spectrogram': log_mel_spectrograms,
+                'item_factors': item_factors,
+                'item_play_counts': item_play_counts,
+                'track_info_str': track_info_str}
+
+        # return {'spectrogram': log_mel_spectrograms,
+        #         'item_factors': item_factors,
+        #         'item_play_counts': item_play_counts}
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, sample):
-        spectrogram, item_factors, item_play_counts = sample['spectrogram'], sample['item_factors'], sample['item_play_counts']
+        spectrogram, item_factors, item_play_counts, track_info_str = sample['spectrogram'], \
+                                                                 sample['item_factors'], \
+                                                                 sample['item_play_counts'], \
+                                                                 sample['track_info_str']
+
+
+        # spectrogram, item_factors, item_play_counts = sample['spectrogram'], \
+        #                                                           sample['item_factors'], \
+        #                                                           sample['item_play_counts']
 
         return {'spectrogram': torch.from_numpy(spectrogram).type(torch.FloatTensor),
                 'item_factors': torch.from_numpy(item_factors).type(torch.FloatTensor),
-                'item_play_counts': torch.from_numpy(item_play_counts.toarray()).type(torch.FloatTensor)}
+                'item_play_counts': torch.from_numpy(item_play_counts.toarray()).type(torch.FloatTensor),
+                'track_info_str': track_info_str
+                }
 
+        # return {'spectrogram': torch.from_numpy(spectrogram).type(torch.FloatTensor),
+        #         'item_factors': torch.from_numpy(item_factors).type(torch.FloatTensor),
+        #         'item_play_counts': torch.from_numpy(item_play_counts.toarray()).type(torch.FloatTensor)
+        #         }
 
 if __name__ == '__main__':
-    item_factors = pickle.load(open('../data/item_wmf_50.pkl', 'rb'))
-    wmf_item2i = pickle.load(open('../data/index_dicts.pkl', 'rb'))['item2i']
-    track_to_song = pickle.load(open('../data/track_to_song.pkl', 'rb'))
+    item_factors = pickle.load(open('../data/wmf/item_wmf_50.pkl', 'rb'))
+    user_factors = pickle.load(open('../data/wmf/user_wmf_50.pkl', 'rb'))
+    wmf_item2i = pickle.load(open('../data/wmf/index_dicts.pkl', 'rb'))['item2i']
+    wmf_user2i = pickle.load(open('../data/wmf/index_dicts.pkl', 'rb'))['user2i']
+    track_to_song = pickle.load(open('../data/wmf/track_to_song.pkl', 'rb'))
+    user_item_matrix = pickle.load(open('../data/wmf/user_item_matrix.pkl', 'rb'))
+    track_id_to_info = pickle.load(open( '../data/song_metadata/track_id_to_info.pkl', 'rb'))
+
     start_time = time.time()
     transformed_dataset = SpectrogramDataset(root_dir='../data/spectrograms',
-                                               item_factors=item_factors,
-                                               wmf_item2i = wmf_item2i,
-                                                track_to_song=track_to_song,
-                                               transform=transforms.Compose([
-                                                   LogCompress(),
-                                                   ToTensor()
-                                                   ]))
+                                             user_item_matrix=user_item_matrix,
+                                             item_factors=item_factors,
+                                             user_factors=user_factors,
+                                             wmf_item2i=wmf_item2i,
+                                             wmf_user2i=wmf_user2i,
+                                             track_to_song=track_to_song,
+                                             track_id_to_info=track_id_to_info,
+                                             transform=transforms.Compose([
+                                                 LogCompress(),
+                                                 ToTensor()
+                                             ])
+                                             )
     print("Dataset size:", len(transformed_dataset))
 
     dataloader = DataLoader(transformed_dataset, batch_size=64,
@@ -109,6 +161,6 @@ if __name__ == '__main__':
 
     print(f"Loading one batch took {time.time() - start_time} seconds")
     print(batch['spectrogram'].size())
-    print(torch.min(batch['spectrogram']))
+    print(batch['track_info_str'])
     # plt.imshow(batch['spectrogram'][0].numpy(), cmap='jet')
     # plt.show()

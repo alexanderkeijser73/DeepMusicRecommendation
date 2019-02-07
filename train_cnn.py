@@ -136,6 +136,7 @@ if __name__ == "__main__":
     track_to_song = pickle.load(open(os.path.join(config.data_path, '../wmf/track_to_song.pkl'), 'rb'))
     item_factors = pickle.load(open(os.path.join(config.data_path,  '../wmf/item_wmf_50.pkl'), 'rb'))
     user_factors = pickle.load(open(os.path.join(config.data_path,  '../wmf/user_wmf_50.pkl'), 'rb'))
+    track_id_to_info = pickle.load(open(os.path.join(config.data_path, '../song_metadata/track_id_to_info.pkl'), 'rb'))
 
     start_time = time.time()
     transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
@@ -145,6 +146,7 @@ if __name__ == "__main__":
                                             wmf_item2i = wmf_item2i,
                                             wmf_user2i=wmf_user2i,
                                             track_to_song=track_to_song,
+                                             track_id_to_info=track_id_to_info,
                                             transform=transforms.Compose([
                                                            LogCompress(),
                                                            ToTensor()
@@ -160,6 +162,7 @@ if __name__ == "__main__":
     dataset_size = len(transformed_dataset)
     indices = list(range(dataset_size))
     split = int(np.floor(validation_split * dataset_size))
+    print('split: ', split)
     if shuffle_dataset:
         np.random.seed(random_seed)
         np.random.shuffle(indices)

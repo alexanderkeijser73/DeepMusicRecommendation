@@ -15,6 +15,9 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 from src.train_utils import *
+from tqdm import tqdm
+
+MAX_TRACKS = 1000
 
 config = load_train_parameters()
 
@@ -24,6 +27,7 @@ wmf_user2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts
 track_to_song = pickle.load(open(os.path.join(config.data_path, '../wmf/track_to_song.pkl'), 'rb'))
 item_factors = pickle.load(open(os.path.join(config.data_path, '../wmf/item_wmf_50.pkl'), 'rb'))
 user_factors = pickle.load(open(os.path.join(config.data_path, '../wmf/user_wmf_50.pkl'), 'rb'))
+track_id_to_info = pickle.load(open(os.path.join(config.data_path, '../song_metadata/track_id_to_info.pkl'), 'rb'))
 
 start_time = time.time()
 transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
@@ -33,6 +37,7 @@ transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
                                          wmf_item2i=wmf_item2i,
                                          wmf_user2i=wmf_user2i,
                                          track_to_song=track_to_song,
+                                         track_id_to_info=track_id_to_info,
                                          transform=transforms.Compose([
                                              LogCompress(),
                                              ToTensor()
@@ -42,7 +47,7 @@ transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
 print(f"Dataset size: {len(transformed_dataset)}")
 
 train_dl = torch.utils.data.DataLoader(transformed_dataset,
-                                           batch_size=config.batch_size)
+                                           batch_size=config.batch_size, shuffle=True)
 n_batches = len(train_dl)
 
 writer = SummaryWriter(comment='tsne_embedding')
@@ -61,28 +66,34 @@ if torch.cuda.is_available():
 
 model.eval()
 
+
 features = torch.empty((0, 2048)) #TODO: REMOVE EXPLICIT LAST LAYER SIZE - DETERMINE FROM MODEL
+metadata = []
 
 for i, batch in enumerate(train_dl):
 
     print(f"Processing batch {i}/{n_batches}")
 
     # load new batch
-    batch_data, batch_targets, batch_play_count_targets = batch['spectrogram'], \
+    batch_data, batch_targets, batch_play_count_targets, batch_song_info = batch['spectrogram'], \
                                                           batch['item_factors'], \
-                                                          batch['item_play_counts']
-
+                                                          batch['item_play_counts'], \
+                                                          batch['track_info_str']
     if torch.cuda.is_available():
         batch_data, batch_targets = batch_data.cuda(), batch_targets.cuda()
 
     # Forward pass to get predicted latent factors
-    item_factor_predictions, batch_features = model(batch_data)
+    _, batch_features = model(batch_data)
 
     features = torch.cat((features, batch_features), dim=0)
+    metadata += batch_song_info
+
+    if i * config.batch_size >= MAX_TRACKS: break
+
 
 writer.add_embedding(
-    item_factor_predictions,
-    metadata=batch_targets.data)
+    features,
+    metadata=metadata)
 
 writer.close()
 
