@@ -1,48 +1,15 @@
-import torch
-import os
-from torch.autograd.variable import Variable
-from tensorboardX import SummaryWriter
-from time import strftime
-import pickle
-from datetime import datetime
-import numpy as np
 import time
-from src.dataloader import SpectrogramDataset, LogCompress, ToTensor
-from src.cnn import AudioCNN
-from src.train_parameters import load_train_parameters
-import torch.nn as nn
+from core.cnn import AudioCNN
 from torch.utils.data import DataLoader
-from torchvision import transforms
-from torch.utils.data.sampler import SubsetRandomSampler
-from src.train_utils import *
-from tqdm import tqdm
+from utils.train_utils import *
+from utils.load_dataset import load_dataset
 
 MAX_TRACKS = 1000
 
 config = load_train_parameters()
-
-user_item_matrix = pickle.load(open(os.path.join(config.data_path, '../wmf/user_item_matrix.pkl'), 'rb'))
-wmf_item2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['item2i']
-wmf_user2i = pickle.load(open(os.path.join(config.data_path, '../wmf/index_dicts.pkl'), 'rb'))['user2i']
-track_to_song = pickle.load(open(os.path.join(config.data_path, '../wmf/track_to_song.pkl'), 'rb'))
-item_factors = pickle.load(open(os.path.join(config.data_path, '../wmf/item_wmf_50.pkl'), 'rb'))
-user_factors = pickle.load(open(os.path.join(config.data_path, '../wmf/user_wmf_50.pkl'), 'rb'))
-track_id_to_info = pickle.load(open(os.path.join(config.data_path, '../song_metadata/track_id_to_info.pkl'), 'rb'))
-
 start_time = time.time()
-transformed_dataset = SpectrogramDataset(root_dir=config.data_path,
-                                         user_item_matrix=user_item_matrix,
-                                         item_factors=item_factors,
-                                         user_factors=user_factors,
-                                         wmf_item2i=wmf_item2i,
-                                         wmf_user2i=wmf_user2i,
-                                         track_to_song=track_to_song,
-                                         track_id_to_info=track_id_to_info,
-                                         transform=transforms.Compose([
-                                             LogCompress(),
-                                             ToTensor()
-                                         ])
-                                         )
+
+transformed_dataset = load_dataset(config.data_path)
 
 print(f"Dataset size: {len(transformed_dataset)}")
 
@@ -50,7 +17,7 @@ train_dl = torch.utils.data.DataLoader(transformed_dataset,
                                            batch_size=config.batch_size, shuffle=True)
 n_batches = len(train_dl)
 
-writer = SummaryWriter(comment='tsne_embedding')
+writer = SummaryWriter('tsne_embedding_runs', comment='tsne_embedding')
 
 model = AudioCNN()
 

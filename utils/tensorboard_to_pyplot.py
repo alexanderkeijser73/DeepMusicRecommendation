@@ -1,7 +1,6 @@
 from pandas import read_csv
 import os
 import matplotlib.pyplot as plt
-import numpy as np
 
 def csv_to_arrays(file_name, root_dir='../tensorboard_graph_data'):
     path = os.path.join(root_dir, file_name)

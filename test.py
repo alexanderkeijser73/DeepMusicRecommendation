@@ -1,16 +1,10 @@
-from time import strftime
 import pickle
-from datetime import datetime
-import numpy as np
 import time
-from src.dataloader import SpectrogramDataset, LogCompress, ToTensor
-from src.cnn import AudioCNN
-from src.train_parameters import load_train_parameters
-import torch.nn as nn
+from core.dataloader import SpectrogramDataset, LogCompress, ToTensor
+from core.cnn import AudioCNN
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from torch.utils.data.sampler import SubsetRandomSampler
-from src.train_utils import *
+from utils.train_utils import *
 
 # root_dir = '/var/scratch/akeijser/'
 root_dir = ''
@@ -64,10 +58,10 @@ for i, test_batch in enumerate(test_dl):
     test_data, test_targets, test_play_count_targets = test_batch['spectrogram'], \
                                                           test_batch['item_factors'], \
                                                           test_batch['item_play_counts']
-    # item_factor_predictions, _ = model(test_data)
+    item_factor_predictions, _ = model(test_data)
 
     # Calculate accuracy
-    play_count_predictions = calc_play_counts(test_targets,
+    play_count_predictions = calc_play_counts(item_factor_predictions,
                                               user_factors)
 
     batch_auc = calc_auc(play_count_predictions, test_play_count_targets)

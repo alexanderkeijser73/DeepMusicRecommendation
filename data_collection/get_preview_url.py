@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
 import urllib.request, urllib.error, urllib.parse
-import json, pprint
+import json
 try:
     from numpy import argmin
 except ImportError:
@@ -44,12 +44,12 @@ from xml.dom import minidom
 # pythonsrc = os.path.join(pythonsrc,'../../../PythonSrc')
 # pythonsrc = os.path.abspath( pythonsrc )
 # sys.path.append( pythonsrc )
-import hdf5_utils
-import hdf5_getters as GETTERS
+from utils import hdf5_utils
+from utils import hdf5_getters as GETTERS
 
 
 # try to get 7digital API key
-DIGITAL7_API_KEY = "BQBQ2LhEV4kT6tbyhYQHFwwNp_5itomZt9ui5-NHBGXp7sa9yG3yFbAkKQkgLPxLSNmv2_nxAPNmqIj0Ce52hXbdpByUb9Lnak6wcue7ETAV3wHg4DpMv3YhrQmTqgO6bJ6SPBoQypTbOirC30yQc3UTRInMchRcQSFmeDAsXO_ycPZdPWHGXwHzja35wx6emYgHnlnht8om1s4HhdHpDAM-4vzLbMVG2RpF6nSEYHSFrTuUG4RmodHYuLHtrp2knehRwkhuUY8jTagSGlKKNputDnA"
+SPOTIFY_API_KEY = "BQBQ2LhEV4kT6tbyhYQHFwwNp_5itomZt9ui5-NHBGXp7sa9yG3yFbAkKQkgLPxLSNmv2_nxAPNmqIj0Ce52hXbdpByUb9Lnak6wcue7ETAV3wHg4DpMv3YhrQmTqgO6bJ6SPBoQypTbOirC30yQc3UTRInMchRcQSFmeDAsXO_ycPZdPWHGXwHzja35wx6emYgHnlnht8om1s4HhdHpDAM-4vzLbMVG2RpF6nSEYHSFrTuUG4RmodHYuLHtrp2knehRwkhuUY8jTagSGlKKNputDnA"
 
 def url_call(url):
     """
@@ -117,7 +117,7 @@ def get_trackid_from_text_search(title,artistname=''):
     req = urllib.request.Request(url)  # POST request doesn't not work
     req.add_header("Accept", "application/json")
     req.add_header("Content-Type", "application/json")
-    req.add_header("Authorization", "Bearer " + DIGITAL7_API_KEY)
+    req.add_header("Authorization", "Bearer " + SPOTIFY_API_KEY)
     stream = urllib.request.urlopen(req)
     string = stream.read().decode('utf-8')
     # with open('./string.txt', 'w+') as f:
@@ -145,7 +145,7 @@ def get_tracks_from_artistid(artistid):
     """
     url = 'http://api.7digital.com/1.2/artist/releases?'
     url += '&artistid='+str(artistid)
-    url += '&oauth_consumer_key='+DIGITAL7_API_KEY
+    url += '&oauth_consumer_key=' + SPOTIFY_API_KEY
     xmldoc = url_call(url)
     status = xmldoc.getAttribute('status')
     if status != 'ok':
@@ -171,7 +171,7 @@ def get_tracks_from_releaseid(releaseid):
     """
     url = 'http://api.7digital.com/1.2/release/tracks?'
     url += 'releaseid='+str(releaseid)
-    url += '&oauth_consumer_key='+DIGITAL7_API_KEY
+    url += '&oauth_consumer_key=' + SPOTIFY_API_KEY
     xmldoc = url_call(url)
     status = xmldoc.getAttribute('status')
     if status != 'ok':
@@ -213,7 +213,7 @@ def get_preview_from_trackid(trackid):
     req = urllib.request.Request(url)  # POST request doesn't not work
     req.add_header("Accept", "application/json")
     req.add_header("Content-Type", "application/json")
-    req.add_header("Authorization", "Bearer " + DIGITAL7_API_KEY)
+    req.add_header("Authorization", "Bearer " + SPOTIFY_API_KEY)
     stream = urllib.request.urlopen(req)
     string = stream.read().decode('utf-8')
     json_obj = json.loads(string)
@@ -232,7 +232,7 @@ def die_with_usage():
     print( '  <SONGFILE>  - a Million Song Dataset file TRABC...123.h5')
     print( 'FLAGS:')
     print( '  -7digitalkey KEY - API key from 7 digital, we recomment you put it')
-    print( '                     under environment variable: DIGITAL7_API_KEY')
+    print( '                     under environment variable: SPOTIFY_API_KEY')
     print( 'OUTPUT:')
     print( '  url from 7digital that should play a clip of the song.')
     print( '  No guarantee that this is the exact audio used for the analysis')
@@ -249,7 +249,7 @@ if __name__ == '__main__':
     # flags
     while True:
         if sys.argv[1] == '-7digitalkey':
-            DIGITAL7_API_KEY = sys.argv[2]
+            SPOTIFY_API_KEY = sys.argv[2]
             sys.argv.pop(1)
         else:
             break
@@ -259,11 +259,11 @@ if __name__ == '__main__':
     h5path = sys.argv[1]
 
     # sanity checks
-    if DIGITAL7_API_KEY is None:
+    if SPOTIFY_API_KEY is None:
         print ('You need to set a 7digital API key!')
         print ('Get one at: http://developer.7digital.net/')
         print ('Pass it as a flag: -7digitalkey KEY')
-        print ('or set it under environment variable: DIGITAL7_API_KEY')
+        print ('or set it under environment variable: SPOTIFY_API_KEY')
         sys.exit(0)
     if not os.path.isfile(h5path):
         print ('invalid path (not a file):',h5path)

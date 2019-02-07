@@ -1,7 +1,6 @@
 import os
-import hdf5_utils
-import hdf5_descriptors
-import hdf5_getters as GETTERS
+from utils import hdf5_utils
+from utils import hdf5_getters as GETTERS
 import pickle
 import glob
 from tqdm import tqdm

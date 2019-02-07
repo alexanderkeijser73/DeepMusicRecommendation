@@ -6,6 +6,7 @@ import numpy as np
 import pickle
 import time
 import glob
+
 class SpectrogramDataset(Dataset):
     """Dataset with mel-spectrograms     for audio samples"""
 
@@ -46,7 +47,6 @@ class SpectrogramDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx):
-        # start_time = time.time()
         file_name = os.path.join(self.root_dir,
                                   self.files[idx])
         try:
@@ -64,9 +64,7 @@ class SpectrogramDataset(Dataset):
         track_name = os.path.basename(file_name)
         track_id = os.path.splitext(track_name)[0]
         track_info = self.track_id_to_info[track_id]
-        track_info_str = f" {str(track_info['artist_name'], 'utf-8')}"
-        # track_info_str += f" - {str(track_info['track_name'], 'utf-8')}"
-        track_info_str += f" - {str(int(track_info['tempo']))}"
+        track_info_str = f"{str(track_info['artist_name'], 'utf-8')} - {str(int(track_info['tempo']))}"
         sample = {'spectrogram': mel_spectrogram,
                   'item_factors': item_factors,
                   'item_play_counts': item_play_counts,
@@ -89,19 +87,12 @@ class LogCompress(object):
                                                                  sample['item_play_counts'], \
                                                                  sample['track_info_str']
 
-        # spectrogram, item_factors, item_play_counts = sample['spectrogram'], \
-        #                                                           sample['item_factors'], \
-        #                                                           sample['item_play_counts']
         log_mel_spectrograms = np.log(spectrogram + self.offset)
 
         return {'spectrogram': log_mel_spectrograms,
                 'item_factors': item_factors,
                 'item_play_counts': item_play_counts,
                 'track_info_str': track_info_str}
-
-        # return {'spectrogram': log_mel_spectrograms,
-        #         'item_factors': item_factors,
-        #         'item_play_counts': item_play_counts}
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
@@ -112,21 +103,11 @@ class ToTensor(object):
                                                                  sample['item_play_counts'], \
                                                                  sample['track_info_str']
 
-
-        # spectrogram, item_factors, item_play_counts = sample['spectrogram'], \
-        #                                                           sample['item_factors'], \
-        #                                                           sample['item_play_counts']
-
         return {'spectrogram': torch.from_numpy(spectrogram).type(torch.FloatTensor),
                 'item_factors': torch.from_numpy(item_factors).type(torch.FloatTensor),
                 'item_play_counts': torch.from_numpy(item_play_counts.toarray()).type(torch.FloatTensor),
                 'track_info_str': track_info_str
                 }
-
-        # return {'spectrogram': torch.from_numpy(spectrogram).type(torch.FloatTensor),
-        #         'item_factors': torch.from_numpy(item_factors).type(torch.FloatTensor),
-        #         'item_play_counts': torch.from_numpy(item_play_counts.toarray()).type(torch.FloatTensor)
-        #         }
 
 if __name__ == '__main__':
     item_factors = pickle.load(open('../data/wmf/item_wmf_50.pkl', 'rb'))
@@ -160,7 +141,3 @@ if __name__ == '__main__':
     batch = dataloader_iter.next()
 
     print(f"Loading one batch took {time.time() - start_time} seconds")
-    print(batch['spectrogram'].size())
-    print(batch['track_info_str'])
-    # plt.imshow(batch['spectrogram'][0].numpy(), cmap='jet')
-    # plt.show()

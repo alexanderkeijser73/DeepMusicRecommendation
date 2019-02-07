@@ -31,15 +31,14 @@ import os
 import sys
 import numpy as np
 # code relies on pytables, see http://www.pytables.org
-import tables
-import hdf5_descriptors as DESC
-from hdf5_getters import *
+from utils import hdf5_descriptors as DESC
+from utils.hdf5_getters import *
 # musicbrainz related stuff
-try:
-    from MBrainzDB import query as QUERYMB
-except ImportError:
-    print('need pg module and MBrainzDB folder of Python source code if you')
-    print('want to use musicbrainz related functions, e.g. fill_hdf5_from_musicbrainz')
+# try:
+#     from MBrainzDB import query as QUERYMB
+# except ImportError:
+#     print('need pg module and MBrainzDB folder of Python  source code if you')
+#     print('want to use musicbrainz related functions, e.g. fill_hdf5_from_musicbrainz')
 
 
 # description of the different arrays in the song file

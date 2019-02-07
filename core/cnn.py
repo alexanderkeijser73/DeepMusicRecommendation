@@ -1,7 +1,7 @@
 import torch.nn as nn
 import pickle
 import time
-from src.dataloader import SpectrogramDataset, LogCompress, ToTensor
+from core.dataloader import SpectrogramDataset, LogCompress, ToTensor
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
